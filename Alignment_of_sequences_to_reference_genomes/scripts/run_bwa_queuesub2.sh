@@ -1,5 +1,9 @@
 #!/bin/sh
 
+####Project 2
+####Alignment of burbot sequences to reference genomes
+####February 20, 2023
+
 ## This script uses bwa to map reads (.fastq) to reference genome
 ## usage (for testing with just one individual):
 ## sbatch run_bwa_queuesub.sh EGM16_0001.fastq
