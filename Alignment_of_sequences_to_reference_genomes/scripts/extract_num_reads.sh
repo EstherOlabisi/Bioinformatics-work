@@ -1,5 +1,9 @@
 #!/usr/bin/bash
 
+####Project 2
+####Alignment of burbot sequences to reference genomes
+####February 20, 2023
+
 ## Usage (within an srun session - could also add SLURM #SBATCH header stuff and run through the queue
 ## ./extract_num_reads.sh
 
