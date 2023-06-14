@@ -1,6 +1,6 @@
-Title: Prediction of cardiovascular disease(CVD) using various classification models
+## Prediction of cardiovascular disease(CVD) using various classification models
 
------ Description -----
+
 The master script 'classification_and_plots.sh' contains Python commands that execeute the pipeline for CVD prediction. 
 
 
