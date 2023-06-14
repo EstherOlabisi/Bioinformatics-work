@@ -1,4 +1,6 @@
 # Prediction of cardiovascular disease(CVD) using various classification models
+* Description: developing machine learning models (gradient boosting, k nearest neighbor, random forest, ridge, and decision tree classifiers) to predict CVD based on several risk factors. 
+
 
 ## /script directory
 This directory contains the master shell script to run the Python scripts developed for this project. The Python scripts are contained in the same directory. 
