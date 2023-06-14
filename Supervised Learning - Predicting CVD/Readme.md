@@ -3,13 +3,10 @@
 ## Script
 This directory contains the master shell script to run the python scripts developed for this project. The python scripts are in the same directory. 
 - Classification_models.py: processes input data, produces results for the classification models, and generates input data for the next python script.
-    * To explore what each argument represents, type or copy and paste the following in your command line: 
+- Learning_curves.py: takes the output from classification_models.py as its input and produces learning curve plots in png format. The figures will be stored in your current working directory. 
+- To explore what the arguments represents, type or copy and paste the following in your command line: 
     ```
     python3 classification_models.py --help
-    ``` 
-- Learning_curves.py: takes the output from classification_models.py as its input and produces learning curve plots in png format. The figures will be stored in your current working directory. 
-    * To explore what each argument represents, type or copy and paste the following in your command line: 
-    ```
     python3 learning_curves.py --help
     ``` 
 
