@@ -1,5 +1,4 @@
-# Prediction of cardiovascular disease(CVD) using various classification models
-Project description: machine learning models (gradient boosting, k nearest neighbor, random forest, ridge, and decision tree classifiers) predicting CVD based on several risk factors. 
+# Prediction of cardiovascular disease(CVD) using various classification models 
 * Predicting CVD_ML_project_report.pdf: full report about the machine learning project.
 * Test_input_file.csv: small input file required to test the scripts described below. 
 
