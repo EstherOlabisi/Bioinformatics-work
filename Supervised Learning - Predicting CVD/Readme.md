@@ -2,14 +2,15 @@
 
 ## /script directory
 This directory contains the master shell script to run the Python scripts developed for this project. The Python scripts are contained in the same directory. 
-- Classification_and_plots.sh: the master script for execeuting Python script pipeline. 
-- Classification_models.py: processes input data, produces results for the classification models, and generates input data for the next Python script.
+- Classification_and_plots.sh: the master script for executing the Python pipeline. 
+- Classification_models.py: processes input data, produces results of the classification models, and generates input data for the next Python script.
 - Learning_curves.py: takes the output from classification_models.py as its input and produces learning curve plots in png format. The figures will be stored in your current working directory. 
 - To explore what the arguments represents, type or copy and paste the following in your command line: 
     ```
     python3 classification_models.py --help
     python3 learning_curves.py --help
     ``` 
+
 
 ## How to run the master script
 - After downloading the master script and Python scripts, you can run the master script by typing the following on your command line: 
