@@ -18,10 +18,12 @@ import argparse
 import sys
 import os
 
-# Developed by:   Dan Tulpan, dtulpan@uoguelph.ca
-# Date:     March 16, 2021
-# Modified by: Esther Olabisi-Adeniyi, April 21, 2023
 
+# ===================== #
+# Data pre-processing #
+# ===================== #
+# This section developed by: Esther Olabisi-Adeniyi
+# April 21, 2023
 
 
 # ============================= #
@@ -185,6 +187,9 @@ np.savetxt("y_train.csv", y_train, delimiter=",", fmt='%.f')
 # ===================== #
 # Classification models #
 # ===================== #
+# This section developed by:   Dan Tulpan, dtulpan@uoguelph.ca
+# Date:     March 16, 2021
+# Modified by: Esther Olabisi-Adeniyi, April 21, 2023
 
 
 method_name = {
