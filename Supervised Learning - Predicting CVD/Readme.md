@@ -21,7 +21,7 @@ This directory contains the master shell script to run the Python scripts develo
 ```
 ./classification_and_plots.sh
 ```
-- If you would like to explore the pipeline further than the default inputs, you can change the arguments using the --help guide as described above.
+- If you would like to explore the pipeline further than the default inputs, you can change the arguments based on the --help guide as described above.
 
 
 
