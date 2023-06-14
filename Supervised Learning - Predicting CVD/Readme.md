@@ -1,5 +1,7 @@
 # Prediction of cardiovascular disease(CVD) using various classification models
-* Description: developing machine learning models (gradient boosting, k nearest neighbor, random forest, ridge, and decision tree classifiers) to predict CVD based on several risk factors. 
+Project description: machine learning models (gradient boosting, k nearest neighbor, random forest, ridge, and decision tree classifiers) predicting CVD based on several risk factors. 
+* Predicting CVD_ML_project_report.pdf: full report about the machine learning project.
+* Test_input_file.csv: small input file required to test the scripts described below. 
 
 
 ## /script directory
@@ -15,7 +17,7 @@ This directory contains the master shell script to run the Python scripts develo
 
 
 ## How to run the master script
-- After downloading the master script and Python scripts, you can run the master script by typing the following on your command line: 
+- After downloading the master script, Python scripts, and test csv file, you can run the master script by typing the following on your command line: 
 ```
 ./classification_and_plots.sh
 ```
