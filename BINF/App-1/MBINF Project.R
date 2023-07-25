@@ -4,7 +4,7 @@ library(gplots)
 
 
 #Added comment.char argument to skip the comment line
-df <- read.delim("../Sylvain_1(keywords).txt", header=T, stringsAsFactors=F, comment.char = "#") 
+#df <- read.delim("../Sylvain_1(keywords).txt", header=T, stringsAsFactors=F, comment.char = "#") 
 
 onedheatmap <- function(oned.annotation.enrichment.df, plot.title = "") {
   #some annotations have the same name but belong to a different database
@@ -149,7 +149,11 @@ process.df <- function(data = "") {
 ##left.st, left.end = index range for left group's LFQ columns - for calculating mean across the columns
 ##right.st, right.end = index range for right group's LFQ columns
 
-volcano_plot <- function(df, curves.df, go.terms = paste(""), plot.title = "", s0 = 1, fdr = 0.05, fdr.lines = paste("yes"), palette.col = paste("Viridis"), default.cols = c("#FF6666", "#00B1B2")) {
+volcano_plot <- function(df, curves.df, 
+                         go.terms = paste(""), plot.title = "", 
+                         s0 = 1, fdr = 0.05, fdr.lines = paste("yes"), 
+                         palette.col = paste("Viridis"), default.cols = c("#FF6666", "#00B1B2" )
+                         ) {
   
   #Subsetting all significant and non-significant(ns) proteins into different dfs. Extract the number of unique GO terms in both sig and ns dfs. The numbers will be used for color-coding the GO terms downstream. Also, extract the x-axis label (in "Group1_Group2" format) from "significant" column
   sig.df <- df[df$Significant == "+",]
@@ -177,10 +181,10 @@ volcano_plot <- function(df, curves.df, go.terms = paste(""), plot.title = "", s
          caption = paste("s0 =", s0, "  ", "FDR =", fdr),
          x = paste0("Difference (", xlab, ")"), 
          y = expression(-log[10]("p-value")))+
-    xlim(min(df$Difference)-1,
-         max(df$Difference)+1)+
-    ylim(min(df$minus.log10.pval),
-         max(df$minus.log10.pval)+2)+
+    coord_cartesian(xlim = c(min(df$Difference)-1,
+                             max(df$Difference)+1),
+                    ylim = c(min(df$minus.log10.pval),
+                             max(df$minus.log10.pval)+2))+
     theme_minimal()+
     theme(plot.title = element_text(face="bold", size = 20),
           plot.caption = element_text(
@@ -292,43 +296,44 @@ volcano_plot <- function(df, curves.df, go.terms = paste(""), plot.title = "", s
 
 
 
-#dt <- process.df(data = "ttest_table.txt")
-#curvesdff <- read.table("curve_matrix.txt", header = T)
-volcano_plot(dt, curvesdff)
+#dt <- process.df(data = "../BINF/ttest_table.txt")
+#curvesdff <- read.table("../BINF/curve_matrix.txt", header = T)
+#volcano_plot(dt, curvesdff) + coord_cartesian(xlim = c(-5,
+                                                      # 5))
 
 #left.st, left.end, right.st, right.end
-dt2 <- dt %>%
-  mutate_at(c('Difference', 'minus.log10.pval'), as.numeric) %>%
-  mutate_at(1:8, as.numeric) %>%
-  rowwise() %>%
-  mutate(left.grp = mean(c_across(5:8), na.rm = T)) %>%
-  mutate(right.grp = mean(c_across(1:4), na.rm = T))
-sig.df <- dt2[dt2$Significant == "+",]
-ns.df <- dt2[dt2$Significant == "",]
+# dt2 <- dt %>%
+#   mutate_at(c('Difference', 'minus.log10.pval'), as.numeric) %>%
+#   mutate_at(1:8, as.numeric) %>%
+#   rowwise() %>%
+#   mutate(left.grp = mean(c_across(5:8), na.rm = T)) %>%
+#   mutate(right.grp = mean(c_across(1:4), na.rm = T))
+# sig.df <- dt2[dt2$Significant == "+",]
+# ns.df <- dt2[dt2$Significant == "",]
 
 
 #test
-ggplot(data = ns.df,
-       aes(x = Difference,
-           y = minus.log10.pval))+
-  geom_point(aes(fill = "grey"), size = 2,
-             alpha = 0.2, shape = 21)+
-  scale_fill_identity()+
-  new_scale_fill()+
-  geom_point(data = sig.df[sig.df$Difference > 0, ],
-                          aes(size = right.grp),
-                          fill = alpha("#FF6666", 0.2),
-                          shape = 21)+
-               scale_size_binned(range = c(1,8),
-                                 name = "Avg Intensity",
-                                 n.breaks = 4)+
-               new_scale(new_aes = "size")+
-               geom_point(data = sig.df[sig.df$Difference < 0, ],
-                          aes(size = left.grp), fill = alpha("#00B1B2", 0.2),
-                          shape = 21)+
-               scale_size_binned(range = c(1,8),
-                                 name = "Avg Intensity",
-                                 n.breaks = 4)
+# ggplot(data = ns.df,
+#        aes(x = Difference,
+#            y = minus.log10.pval))+
+#   geom_point(aes(fill = "grey"), size = 2,
+#              alpha = 0.2, shape = 21)+
+#   scale_fill_identity()+
+#   new_scale_fill()+
+#   geom_point(data = sig.df[sig.df$Difference > 0, ],
+#                           aes(size = right.grp),
+#                           fill = alpha("#FF6666", 0.2),
+#                           shape = 21)+
+#                scale_size_binned(range = c(1,8),
+#                                  name = "Avg Intensity",
+#                                  n.breaks = 4)+
+#                new_scale(new_aes = "size")+
+#                geom_point(data = sig.df[sig.df$Difference < 0, ],
+#                           aes(size = left.grp), fill = alpha("#00B1B2", 0.2),
+#                           shape = 21)+
+#                scale_size_binned(range = c(1,8),
+#                                  name = "Avg Intensity",
+#                                  n.breaks = 4)
 
 
 
@@ -352,46 +357,75 @@ ui <- fluidPage(
   sidebarLayout(
     
     sidebarPanel(width = 4,
-                 fileInput(inputId = "proteinfile", label = "Protein data input"),
-                 
-                 fileInput("curvesfile", label = "FDR curves data input"),
-                 
-                 fileInput("onedfile", label = "1D annotation data input"),
-                 
-                 br(),
-                 h4("ggplot Options"),
-                 
-                 colourInput("high.col",
-                             label = "High expression colour",
-                             value = "#FF6666"),
-                 
-                 colourInput("low.col",
-                             label = "Low expression colour",
-                             value = "#00B1B2"),
+                 fluidRow(
+                   column(width = 4,
+                          fileInput(inputId = "proteinfile", label = "Protein data input") ),
+                   
+                   column(width = 4, 
+                          fileInput("curvesfile", label = "FDR curves data input") ),
+                   
+                   column(width = 4,
+                          fileInput("onedfile", label = "1D annotation data input") ),
+                          
+                   h4("ggplot Options"),
+                   column(width = 12, br()),
+                   
+                   column(width = 6, colourInput("high.col",
+                                                 label = "High expression colour",
+                                                 value = "#FF6666") ),
+                   
+                   column(width = 6, colourInput("low.col",
+                                                 label = "Low expression colour",
+                                                 value = "#00B1B2") )
+                 ),
                  
                  actionButton("reset", label = "Reset colours"),
                  br(),
                  
                  br(),
-                 helpText("Note: Changing the s0 and FDR values is purely aesthetic for the
+                 fluidRow(
+                   
+                   column(width = 3, numericInput("xmin",
+                                                  label = "x min", 
+                                                  value = NULL) ),
+                   
+                   column(width = 3, numericInput("xmax", 
+                                                  label = "x max", 
+                                                  value = NULL) ),
+                   
+                   column(width = 3, numericInput("ymin", 
+                                                  label = "y min", 
+                                                  value = NULL) ),
+                   
+                   column(width = 3, numericInput("ymax", 
+                                                  label = "y max", 
+                                                  value = NULL) ),
+                   
+                   column(width = 12, br()),
+                   
+                   column(width = 6, numericInput("s.knot",
+                                                  label = "s0 value",
+                                                  value = 1) ),
+                   
+                   column(width = 6, numericInput("fdr.val",
+                                                  label = "FDR value",
+                                                  value = 0.05) ),
+                   
+                   helpText("Note: Changing the s0 and FDR values is purely aesthetic for the
                captions at the base of the plot. The plotted points remain unaffected."),
+                   
+                 ),
                  
-                 numericInput("s.knot",
-                              label = "s0 value",
-                              value = 1),
-                 
-                 numericInput("fdr.val",
-                              label = "FDR value",
-                              value = 0.05),
-                 
+                 br(),
                  radioButtons("fdr.lines",
-                              label = "FDR lines",
+                              label = "Display curves",
                               choices = list("yes", "no"),
-                              selected = "yes"),
+                              selected = "yes", inline = T),
                  
                  radioButtons("go.term",
                               label = "GO terms",
-                              choices = list("sig", "non-sig", "reset"), selected = "reset"),
+                              choices = list("sig", "non-sig", "reset"),
+                              selected = "reset", inline = T),
                  
                  selectInput("palette",
                              label = "GO terms color palette",
@@ -441,7 +475,6 @@ server <- function(input, output, session) {
   
   ##create volcano plot with UI input variables   
   output$volcanoplot <- renderPlot({
-    
     volcano_plot(df = df.prot(),
                  curves.df = df.curves(),
                  go.terms =  input$go.term,
@@ -449,26 +482,41 @@ server <- function(input, output, session) {
                  plot.title = input$vplot.title,
                  s0 = input$s.knot,
                  fdr = input$fdr.val,
-                 fdr.lines = input$fdr.lines,
-                 default.cols = c(input$high.col, input$low.col)
-    )
-    
-  })   
-  #allow for the volcano plot to reset to the default figure
-  observeEvent(req(input$go.term == "reset"), {
-    volcano_plot(df = df.prot(),
-                 curves.df = df.curves(),
-                 default.cols = c("#FF6666", "#00B1B2"))
+                 fdr.lines = input$fdr.lines )
+  
   })
+
+  observeEvent(req(input$xmin | input$xmax | input$ymin | input$ymax), {
+    # updateNumericInput(session, "xmin", value = input$xmin)
+    # updateNumericInput(session, "xmax", value = input$xmax)
+    # updateNumericInput(session, "ymin", value = input$ymin)
+    # updateNumericInput(session, "ymax", value = input$ymax)
+    
+    output$volcanoplot <- renderPlot({
+      
+      volcano_plot(df = df.prot(),
+                   curves.df = df.curves(),
+                   go.terms =  input$go.term,
+                   palette.col = input$palette,
+                   plot.title = input$vplot.title,
+                   s0 = input$s.knot,
+                   fdr = input$fdr.val,
+                   fdr.lines = input$fdr.lines )+
+        coord_cartesian(xlim = c(input$xmin, input$xmax),
+                        ylim = c(input$ymin, input$ymax))
+    })  
+  
+  })
+  #allow for the volcano plot to reset to the default figure
+  # observeEvent(req(input$go.term == "reset"), {
+  #   volcano_plot(df = df.prot(),
+  #                curves.df = df.curves(),
+  #                default.cols = c("#FF6666", "#00B1B2"))
+  # })
   
   observeEvent(input$reset, {
     updateColourInput(session, inputId = "high.col", value = "#FF6666")
-    updateColourInput(session, inputId = "low.col", value = "#00B1B2")
-    #    output$volcanoplot <- renderPlot({
-    #  volcano_plot(df = df.prot(),
-    #            curves.df = df.curves(),
-    #           default.cols = c("#FF6666", "#00B1B2"))
-    
+    updateColourInput(session, inputId = "low.col", value = "#00B1B2") 
   })
   
   
@@ -481,4 +529,4 @@ server <- function(input, output, session) {
 
 shinyApp(ui = ui, server = server)
 
-#add image download as pdf/ png 
+#add image download as pdf/ png
