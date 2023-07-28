@@ -60,17 +60,17 @@ pfs.B <- pfs[16:37, ]
 os.T <- os[1:14, ]
 os.B <- os[16:37, ]
 
-##Exploratory----
-#To view all survival plots regardless of significance, change survival df and range.col as needed here.
+#Change survival dataset and range of mirna columns using these variables
+#pfs.B for example 
 survdf <- pfs.B #change df here
-range.col <- 4:25 #change mirna column range here
+range.col <- 6:27 #change mirna column range here
 
 #Then run these lines. Each plot will show on the viewer pane
 surv.fits <- lapply(survdf[range.col], function(x) surv_fit(Surv(PFS.days, Censoring) ~ x, data = survdf))
-surv.plots <- ggsurvplot_list(surv.fits, data = pfs.B, pval = T)
-surv.plots
-arrange_ggsurvplots(surv.plots[1:8], ncol = 4, nrow = 2)  #First 8 plots at once  
+surv.plots <- ggsurvplot_list(surv.fits, data = survdf, pval = T)
+arrange_ggsurvplots(surv.plots[1:8], ncol = 4, nrow = 2)  #First 8 plots at once
 
+survfit(Surv(PFS.days, Censoring) ~ miR.18a, data = pfs.B)
 
 ##Main analysis----
 #---- function for plotting curves----
@@ -106,7 +106,7 @@ kmplot <- function(surv.obj, df, legend.label = "", xlabel = "Days", ylabel = "P
   main.plot$plot+
     theme(legend.text = element_text(size = 8),
           legend.title = element_text(size = 8),
-          axis.title = element_text(size = 8))+
+          axis.title = element_text(size = 9))+
     annotate("text",
              x = xmax-100,
              y = 1,
@@ -126,15 +126,16 @@ kmplot <- function(surv.obj, df, legend.label = "", xlabel = "Days", ylabel = "P
 
 
 #---- function for fitting survival data ----
-#This function extracts the pvalues of statistically significant miRNAs and plots those miRNA survival data only. The surv_fit() function is used instead of survfit() since the former supports surv lists. As.formula() was used with miRNA names to fit the final plots since we want those names to be displayed on the plots.
+#This function extracts the pvalues of statistically significant miRNAs and plots those miRNA only. The surv_fit() function (with the underscore) is used instead of survfit() since the former supports surv lists. As.formula() was used with miRNA names to fit the final plots since we want the mirna names to be displayed on the plots. 
 
 ###ARGUMENTS
 #df = full df including censoring data
 #col.range = range of columns to be fitted (miRNAs only)
+#pfs.os.col = index of the column containing PFS or OS values. 3 is the default column index
 #Plot customization arguments applicable to km.plot()
-plot.sig.fits <- function(df, col.range, legend.label = "", xlabel = "Days", ylabel = "Percent survival"){
+plot.sig.fits <- function(df, col.range, pfs.os.col = 3, legend.label = "", xlabel = "Days", ylabel = "Percent survival"){
   subset.df <- df[col.range] 
-  time.col <- df[,1]  #PFS or OS time column
+  time.col <- df[,pfs.os.col]  #PFS or OS time column
   
   #fit all miRNA survival data
   all.fits <- lapply(subset.df, function(x) surv_fit(Surv(time.col, Censoring) ~ x, data = df))
@@ -177,33 +178,38 @@ plot.sig.fits <- function(df, col.range, legend.label = "", xlabel = "Days", yla
 
 
 #---- Results ----
-#One can select pvalues or plots only for the output
-#PFS for B cell
-pfs.B.km <- plot.sig.fits(pfs.B, 4:25, legend.label = "B cell:  ") 
-pfs.B.km
-ggarrange(plotlist = pfs.B.km$plot.list, labels = "AUTO") #all PFS.B plots at once
-pfs.B.km$all.pvalues
+#One can have two outputs with the above function: a dataframe containing all pvalues OR the significant Kaplan Meier (km) plots. 
 
-#PFS for T cell - no signif miRNAs
-pfs.T.km <- plot.sig.fits(pfs.T, 3:25, legend.label = "T cell:  ") 
+#PFS for B cell
+pfs.B.km <- plot.sig.fits(pfs.B, col.range = 6:27, legend.label = "B cell:  ") 
+pfs.B.km
+ggarrange(plotlist = pfs.B.km$plot.list, labels = "AUTO") #ggarrange all PFS.B plots at once
+pfs.B.km$all.pvalues 
+#PFS for T cell 
+pfs.T.km <- plot.sig.fits(pfs.T, 5:27, legend.label = "T cell:  ") 
+pfs.T.km
+#Join pfs B and T
+PFS.BT <- c(pfs.B.km$plot.list, pfs.T.km$plot.list)
+ggarrange(plotlist = PFS.BT, ncol = 3, labels = "AUTO")
+
 
 #OS for B cell
-os.B.km <- plot.sig.fits(os.B, 3:25, legend.label = "B cell:  ") 
+os.B.km <- plot.sig.fits(os.B, 5:27, legend.label = "B cell:  ") 
 ggarrange(plotlist = os.B.km$plot.list)
-
 #OS for T cell 
-os.T.km <- plot.sig.fits(os.T, 3:25, legend.label = "T cell:  ") 
+os.T.km <- plot.sig.fits(os.T, 5:27, legend.label = "T cell:  ") 
 ggarrange(plotlist = os.T.km$plot.list) 
-
-#Join OS B and T
-test <- c(os.T.km$plot.list, os.B.km$plot.list)
-ggarrange(plotlist = test[1:4], labels = "AUTO")
-ggarrange(plotlist = test[5:7], labels = c("E", "F", "G"))
+#Join OS B and T. 7 total significant mirnas; split into 6 and 1 per page 
+OS.BT <- c(os.T.km$plot.list, os.B.km$plot.list)
+ggarrange(plotlist = OS.BT[1:6], labels = "AUTO")
+ggarrange(plotlist = OS.BT[7], labels = "G", ncol = 3)
 
 #Export all pvalues
 write.csv(pfs.B.km$all.pvalues, file = "PFS_Bcell.csv", row.names = T)
-write.csv(pfs.T.km, file = "PFS_Tcell.csv", row.names = T)
+write.csv(pfs.T.km$all.pvalues, file = "PFS_Tcell.csv", row.names = T)
 write.csv(os.B.km$all.pvalues, file = "OS_Bcell.csv", row.names = T)
 write.csv(os.T.km$all.pvalues, file = "OS_Tcell.csv", row.names = T)
+
+
 
 
