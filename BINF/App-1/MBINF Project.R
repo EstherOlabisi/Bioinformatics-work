@@ -1,6 +1,7 @@
 ####HEATMAP ----
 library(ggplot2)
 library(gplots)
+library(ggrepel)
 
 
 #Added comment.char argument to skip the comment line
@@ -43,37 +44,37 @@ onedheatmap <- function(oned.annotation.enrichment.df, plot.title = "") {
   m[is.na(m)] <- 0
   
   return ( heatmap.2(m,
-            col = bluered(256),
-            # breaks=col_breaks,
-            #ColSideColors=NULL,
-            margins = c(10, 20),
-            trace = "none", 
-            main = plot.title,
-            xlab = "T-test differences",
-            ylab = "Annotations",
-            # labRow = row.label,
-            # labCol = col.label,
-            #lmat=rbind(c(4,3,3), c(2,1,1), c(2,1,1)), 
-            #lhei=c(1,2,3), 
-            #lwid=c(1,2,3),
-            #scale = c("none"),
-            #symbreaks = min(18, na.rm=TRUE),
-            na.color="grey",
-            na.rm=F,
-            #cexRow = .9, cexCol = .9,
-            #main = header.heatmap, 
-            dendrogram = "none", 
-            density.info = "none",
-            Colv = F,
-            Rowv = T,
-            cexRow = 1,
-            cexCol = 1,
-            # block sepration
-            colsep = c(1:ncol(m)),
-            rowsep = c(1:nrow(m)),
-            sepcolor="grey",
-            sepwidth=c(0.05,0.05))
-            
+                     col = bluered(256),
+                     # breaks=col_breaks,
+                     #ColSideColors=NULL,
+                     margins = c(10, 20),
+                     trace = "none", 
+                     main = plot.title,
+                     xlab = "T-test differences",
+                     ylab = "Annotations",
+                     # labRow = row.label,
+                     # labCol = col.label,
+                     #lmat=rbind(c(4,3,3), c(2,1,1), c(2,1,1)), 
+                     #lhei=c(1,2,3), 
+                     #lwid=c(1,2,3),
+                     #scale = c("none"),
+                     #symbreaks = min(18, na.rm=TRUE),
+                     na.color="grey",
+                     na.rm=F,
+                     #cexRow = .9, cexCol = .9,
+                     #main = header.heatmap, 
+                     dendrogram = "none", 
+                     density.info = "none",
+                     Colv = F,
+                     Rowv = T,
+                     cexRow = 1,
+                     cexCol = 1,
+                     # block sepration
+                     colsep = c(1:ncol(m)),
+                     rowsep = c(1:nrow(m)),
+                     sepcolor="grey",
+                     sepwidth=c(0.05,0.05))
+           
            #cellnote=round(m.exclusive.proteins, 1),
            #notecol="black",
            #notecex=.7
@@ -82,8 +83,6 @@ onedheatmap <- function(oned.annotation.enrichment.df, plot.title = "") {
 
 
 ##Halos to pca plot
-##change range of axes
-#Versioning software 
 ##Use second table as input
 
 ####VOLCANO PLOT ----
@@ -109,39 +108,54 @@ require(ggnewscale)
 #Read data containing t-test result. Remove all comment rows manually since the "comment.char" argument for read.delim() fails to do so. 
 #Change column names to shorter generic names since the column names may slightly different among datasets. Columns of focus: -log10 p-values, Difference, and Significant proteins. Also, select the first GO terms using regex. 
 
-process.df <- function(data = "") {
-  
-  dataset <- read.delim(data)
+process.df <- function(dataset, left.range, right.range) {
   comment_char <- grep("^#", dataset[,1])
   dataset <- dataset[-(comment_char),]
-  lfq.cols <- grep("lfq", colnames(df), ignore.case = T) # lfq columns
-   
+  
   dataset <- dataset %>%
     setNames(sub(".+p.value.+", "minus.log10.pval", names(.))) %>% #-log10pval
     setNames(sub(".+Difference.+", "Difference", names(.))) %>% #Difference
     setNames(sub(".+Significant.+", "Significant", names(.))) %>% #signficant proteins
-    mutate(Keywords =  sub(";.*$", "", Keywords)) %>% #select first keywords
-    remove_rownames() %>%
-    column_to_rownames(var = "Majority.protein.IDs") %>%
-    mutate(Expression = case_when(Difference >= 0 & Significant == "+" ~ "High",
-                                  Difference <= 0 & Significant == "+" ~ "Low",
-                                  TRUE ~ "Not significant")) %>%
-    mutate(Expression = factor(Expression,
-                               levels = c("High", "Low", "Not significant"))) %>%
-    mutate_at(c('Difference', 'minus.log10.pval'), as.numeric) 
+    mutate(Keywords =  sub(";.*$", "", Keywords))  #select first keywords
   
+  
+  
+  #Extract group labels from the "significant" column for use in legend
+  sig.df <- dataset[dataset$Significant == "+",]  
+  gr.name.col <- grep("significant", colnames(sig.df)) 
+  group.labs <- unique(sig.df[, gr.name.col]) #extract label 
+  group.labs <- str_split_1(group.labs, "_") #separate labels
+  
+  #Add the group labels based on positive or negative x axis then calculate mean across groups
+  dataset <- dataset %>%
+    mutate(Expression = case_when(Difference >= 0 & Significant == "+" ~ paste0("Higher abundance in ", group.labs[1]),
+                                  Difference <= 0 & Significant == "+" ~ paste0("Higher abundance in ", group.labs[2]),
+                                  TRUE ~ "Not significant")) %>%
+    mutate(Expression = factor(Expression, levels = c(
+      paste0("Higher abundance in ", group.labs[2]),
+      paste0("Higher abundance in ", group.labs[1]),
+      "Not significant"))) %>%  #reorder
+    mutate_at(c('Difference', 'minus.log10.pval'), as.numeric) %>%
+    mutate_at(vars(contains("lfq")), as.numeric) %>%
+    rowwise() %>%
+    mutate(left.group = mean(
+      c_across(all_of(left.range)))) %>%
+    mutate(right.group = mean(
+      c_across(all_of(right.range)))) %>%
+    remove_rownames() %>%
+    column_to_rownames(var = "Majority.protein.IDs")
   
   return(dataset)
 }
 
 
 
-#Creating a function for volcano plot: ----
+#A function for the Volcano plot: ----
 #The function requires an input dataframe(df) while other arguments are optional.
 #curves.df = dataframe for fdr curves
 #go.terms = display GO terms for significant or non-significant proteins
 ##plot.title = custom plot title top left
-##default.cols = colours for the default plot in the following order: high-expressing, low-expressing colours. 
+##group.cols = colours for the default plot in the following order: higher-left, higher-right colours. 
 ##s0 = s0 value to show on the plot. Default = 0.1
 ##fdr = fdr value to show on the plot. Default = 0.05
 ##fdr.lines = 'yes' to show lines and 'no' to remove lines
@@ -150,19 +164,25 @@ process.df <- function(data = "") {
 ##right.st, right.end = index range for right group's LFQ columns
 
 volcano_plot <- function(df, curves.df, 
-                         go.terms = paste(""), plot.title = "", 
-                         s0 = 1, fdr = 0.05, fdr.lines = paste("yes"), 
-                         palette.col = paste("Viridis"), default.cols = c("#FF6666", "#00B1B2" )
-                         ) {
+                         go.terms = "", plot.title = "", 
+                         s0 = 1, fdr = 0.05, fdr.lines = "yes", 
+                         palette.col = "Viridis", group.cols = c("#00B1B2", "#FF6666"),
+                         vary.sizes = "no",
+                         select.pts = c()) {
   
-  #Subsetting all significant and non-significant(ns) proteins into different dfs. Extract the number of unique GO terms in both sig and ns dfs. The numbers will be used for color-coding the GO terms downstream. Also, extract the x-axis label (in "Group1_Group2" format) from "significant" column
+  #Subset significant and non-significant(ns) proteins into their respective dfs. 
+  #Extract the number of unique GO terms in both sig and ns dfs. The numbers will be used for color-coding the GO terms downstream. 
+  #Subset the selected proteins so that we can use their protein ids(rownames) as point labels on the plot
+  #Also, extract the x-axis label (in "Group1_Group2" format) from "significant" column
   sig.df <- df[df$Significant == "+",]
   ns.df <- df[df$Significant == "",] 
   num.sig.go <- length(unique(sig.df$Keywords)) 
   num.ns.go <- length(unique(ns.df$Keywords)) 
-  label.col <- grep("significant", colnames(df)) #column index 
-  xlab <- unique(sig.df[label.col]) 
-  
+  select.pts <- df[select.pts, ]
+  gr.name.col <- grep("significant", colnames(df)) #column index 
+  xlab <- unique(sig.df[, gr.name.col]) 
+  xlab <- sub("_", " - ", xlab)
+  group.labs <- str_split_1(xlab, " - ")
   
   
   #Custom settings for ggplots
@@ -181,90 +201,97 @@ volcano_plot <- function(df, curves.df,
          caption = paste("s0 =", s0, "  ", "FDR =", fdr),
          x = paste0("Difference (", xlab, ")"), 
          y = expression(-log[10]("p-value")))+
-    coord_cartesian(xlim = c(min(df$Difference)-1,
-                             max(df$Difference)+1),
+    coord_cartesian(xlim = c(min(df$Difference),
+                             max(df$Difference)),
                     ylim = c(min(df$minus.log10.pval),
-                             max(df$minus.log10.pval)+2))+
+                             max(df$minus.log10.pval)),
+                    expand = T)+
     theme_minimal()+
     theme(plot.title = element_text(face="bold", size = 20),
           plot.caption = element_text(
             colour = "darkviolet", size = 11))
   
+  
   #Fdr curves layer 
   curve.plot <- geom_line(data = curves.df, aes(x, y), linetype=2)
   
+  #Layer for labelling points 
+  label.pt.plot <- geom_label_repel(data = select.pts, 
+                                    aes(label = rownames(select.pts)),
+                                    nudge_y = 0.4,  fill = "grey")
   
   ###Adding layers to the base plot
   #Add GO terms for sig proteins
   sig.go <- base_vplot +
-    scale_fill_identity()+  #hides grey legend from base plot
+    scale_fill_identity()+  #hides grey legend that comes from the base plot
     new_scale_fill()+
     geom_point(data = sig.df,
-               aes(fill = Keywords), size = s.sz,
+               aes(fill = Keywords), 
+               size = s.sz,
                shape = s)+
     scale_fill_manual(values = hcl.colors(
-      num.sig.go, palette.col, rev = F))
+      num.sig.go, palette.col, rev = F)) + 
+    label.pt.plot
   
   #Add GO terms for non-sig proteins. Grey out sig proteins. 
   nonsig.go <- base_vplot +
     scale_fill_identity()+
     new_scale_fill()+
     geom_point(aes(fill = Keywords),
-               size = ns.sz, shape = s)+
-    geom_point(data = sig.df, fill = "grey",
-               size = s.sz, alpha = a,
+               size = ns.sz, 
                shape = s)+
     scale_fill_manual(values = hcl.colors(
       num.ns.go,
       palette.col,
-      rev = F))
+      rev = F)) + 
+    geom_point(data = sig.df, fill = "grey",
+               size = s.sz, alpha = a,
+               shape = s) + 
+    label.pt.plot
   
   ###Add layer showing average protein abundance across samples 
   #Where right sample has the higher averages, the right averages are used for size variation. The same for where the left sample has the higher averages
-  # rowwise() %>%
-  #   mutate(left.grp = mean(c_across(left.st : left.end), na.rm = T)) %>%
-  #   mutate(right.grp = mean(c_across(right.st : right.end), na.rm = T))
-  # 
-  # 
-  #   vary.size.pl <- base_vplot + 
-  #   scale_fill_identity()+
-  #   new_scale_fill()+
-  #   geom_point(data = sig.df[sig.df$Difference > 0, ],
-  #              aes(size = right.grp),
-  #              fill = alpha("#FF6666", 0.2),
-  #              shape = 21)+
-  #   scale_size_binned(range = c(1,8),
-  #                     name = "Avg Intensity",
-  #                     n.breaks = 4)+
-  #   new_scale(new_aes = "size")+
-  #   geom_point(data = sig.df[sig.df$Difference < 0, ],
-  #              aes(size = left.grp), fill = alpha("#00B1B2", 0.2),
-  #              shape = 21)+
-  #   scale_size_binned(range = c(1,8),
-  #                     name = "Avg Intensity",
-  #                     n.breaks = 4)
-  # 
+  vary.size.pl <- base_vplot +
+    scale_fill_identity()+
+    new_scale_fill()+
+    geom_point(data = sig.df[sig.df$Difference > 0, ],
+               aes(size = right.group),
+               fill = alpha("#FF6666", a),
+               shape = s)+
+    scale_size_binned(range = c(1,8),
+                      name = paste0("Average Intensity ", group.labs[1]),
+                      n.breaks = 4)+
+    new_scale(new_aes = "size")+
+    geom_point(data = sig.df[sig.df$Difference < 0, ],
+               aes(size = left.group), 
+               fill = alpha("#00B1B2", a),
+               shape = s)+
+    scale_size_binned(range = c(1,8),
+                      name = paste0("Average Intensity ", group.labs[2]),
+                      n.breaks = 4) + 
+    label.pt.plot
+  
   #Options: GO term plot for sig proteins, with fdr lines and without fdr lines
   if (go.terms == "sig" && fdr.lines == "yes") {
     return (sig.go + curve.plot)
     
   } else if (go.terms == "sig" && fdr.lines == "no") {
     return (sig.go)
-  
-  #Options: GO terms for non-sig proteins with fdr lines, without fdr lines, and default plot with color-coding of high and low expression proteins. 
+    
+    #Options: GO terms for non-sig proteins with fdr lines, without fdr lines, and default plot with color-coding of high and low expression proteins. 
   } else if (go.terms == "non-sig" && fdr.lines == "yes") {
     return (nonsig.go + curve.plot)
     
   } else if (go.terms == "non-sig" && fdr.lines == "no") {
     return (nonsig.go)
-  
-  #Sizes
-  # } else if(vary.sizes == "yes" && fdr.lines == "yes") {
-  #   return (vary.size.pl + curve.plot)
-  # 
-  # } else if (vary.sizes == "yes" && fdr.lines == "no") {
-  #   return (vary.size.pl)
-  #   
+    
+    #Sizes
+  } else if(vary.sizes == "yes" && fdr.lines == "yes") {
+    return (vary.size.pl + curve.plot)
+    
+  } else if (vary.sizes == "yes" && fdr.lines == "no") {
+    return (vary.size.pl)
+    
   } else if (fdr.lines == "yes") {
     return(
       base_vplot +
@@ -274,68 +301,36 @@ volcano_plot <- function(df, curves.df,
         new_scale_fill()+
         geom_point(data = sig.df, aes(fill = Expression),
                    size = s.sz, shape = s) +
-        scale_fill_manual(values = default.cols)+
+        scale_fill_manual(values = group.cols)+
         guides(fill = guide_legend(order = 1))+
-        theme(legend.spacing = unit(-0.5, "cm"))+
-        curve.plot)
+        label.pt.plot + curve.plot + 
+        theme(legend.spacing = unit(-0.5, "cm"))
+    )
     
   } else if (fdr.lines == "no") {
-    base_vplot +
-      scale_fill_identity(name = NULL,
-                          labels = "Not significant",
-                          guide = "legend")+
-      new_scale_fill()+
-      geom_point(data = sig.df, aes(fill = Expression),
-                 size = s.sz, shape = s) +
-      scale_fill_manual(values = default.cols)+
-      guides(fill = guide_legend(order = 1))+
-      theme(legend.spacing = unit(-0.5, "cm"))
+    return(
+      base_vplot +
+        scale_fill_identity(name = NULL,
+                            labels = "Not significant",
+                            guide = "legend")+
+        new_scale_fill()+
+        geom_point(data = sig.df, aes(fill = Expression),
+                   size = s.sz, shape = s) +
+        scale_fill_manual(values = group.cols)+
+        guides(fill = guide_legend(order = 1))+
+        label.pt.plot +
+        theme(legend.spacing = unit(-0.5, "cm"))
+    )
   }
   
 }
 
 
-
-#dt <- process.df(data = "../BINF/ttest_table.txt")
-#curvesdff <- read.table("../BINF/curve_matrix.txt", header = T)
-#volcano_plot(dt, curvesdff) + coord_cartesian(xlim = c(-5,
-                                                      # 5))
-
-#left.st, left.end, right.st, right.end
-# dt2 <- dt %>%
-#   mutate_at(c('Difference', 'minus.log10.pval'), as.numeric) %>%
-#   mutate_at(1:8, as.numeric) %>%
-#   rowwise() %>%
-#   mutate(left.grp = mean(c_across(5:8), na.rm = T)) %>%
-#   mutate(right.grp = mean(c_across(1:4), na.rm = T))
-# sig.df <- dt2[dt2$Significant == "+",]
-# ns.df <- dt2[dt2$Significant == "",]
-
-
-#test
-# ggplot(data = ns.df,
-#        aes(x = Difference,
-#            y = minus.log10.pval))+
-#   geom_point(aes(fill = "grey"), size = 2,
-#              alpha = 0.2, shape = 21)+
-#   scale_fill_identity()+
-#   new_scale_fill()+
-#   geom_point(data = sig.df[sig.df$Difference > 0, ],
-#                           aes(size = right.grp),
-#                           fill = alpha("#FF6666", 0.2),
-#                           shape = 21)+
-#                scale_size_binned(range = c(1,8),
-#                                  name = "Avg Intensity",
-#                                  n.breaks = 4)+
-#                new_scale(new_aes = "size")+
-#                geom_point(data = sig.df[sig.df$Difference < 0, ],
-#                           aes(size = left.grp), fill = alpha("#00B1B2", 0.2),
-#                           shape = 21)+
-#                scale_size_binned(range = c(1,8),
-#                                  name = "Avg Intensity",
-#                                  n.breaks = 4)
-
-
+####test 
+# dt <- read.delim("../ttest_table.txt", na.strings = c("NA", "NaN"))
+# dt <- process.df(dataset = dt, left.range = c("LFQ.intensity.WT.1", "LFQ.intensity.WT.2", "LFQ.intensity.WT.3", "LFQ.intensity.WT.4"), right.range = c("LFQ.intensity.401.1", "LFQ.intensity.401.2", "LFQ.intensity.401.3", "LFQ.intensity.401.4"))
+#    curvesdff <- read.table("../curve_matrix.txt", header = T)
+#volcano_plot(dt, curvesdff, go.terms = "non-sig", fdr.lines = "no", select.pts = c("A6T4E4"))
 
 
 
@@ -343,12 +338,13 @@ volcano_plot <- function(df, curves.df,
 ##SHINY GUI ----
 require(colourpicker)
 require(shiny)
+require("shinyWidgets")
 #flowchart 
 #perseus vs my result
 #these proteins associated with this go term
 #GO terms on heatmap only
 #make transparent circles
-
+#ignore NA warning, comes form the ones left in dataframe
 
 #Shiny UI ---- 
 ui <- fluidPage(
@@ -357,29 +353,35 @@ ui <- fluidPage(
   sidebarLayout(
     
     sidebarPanel(width = 4,
+                 
                  fluidRow(
                    column(width = 4,
                           fileInput(inputId = "proteinfile", label = "Protein data input") ),
-                   
                    column(width = 4, 
-                          fileInput("curvesfile", label = "FDR curves data input") ),
-                   
+                          fileInput("curvesfile", label = "Volcano curves data input") ),
                    column(width = 4,
                           fileInput("onedfile", label = "1D annotation data input") ),
-                          
+                   uiOutput("enter.range"),
+                   column(width = 6, selectInput("left.gr", 
+                                                 label = "Column range for Left group",
+                                                 choices = c(),
+                                                 multiple = T) ),
+                   column(width = 6, selectInput("right.gr", 
+                                                 label = "Column range for Right group",
+                                                 choices = c(),
+                                                 multiple = T) ),
+                   
                    h4("ggplot Options"),
                    column(width = 12, br()),
+                   column(width = 6, colourInput("left.col",
+                                                 label = "Left group colour",
+                                                 value = "#00B1B2") ),
+                   column(width = 6, colourInput("right.col",
+                                                 label = "Right group colour",
+                                                 value = "#FF6666") )
                    
-                   column(width = 6, colourInput("high.col",
-                                                 label = "High expression colour",
-                                                 value = "#FF6666") ),
-                   
-                   column(width = 6, colourInput("low.col",
-                                                 label = "Low expression colour",
-                                                 value = "#00B1B2") )
                  ),
-                 
-                 actionButton("reset", label = "Reset colours"),
+                 actionButton("reset", label = "Reset Volcano Plot"),
                  br(),
                  
                  br(),
@@ -388,15 +390,12 @@ ui <- fluidPage(
                    column(width = 3, numericInput("xmin",
                                                   label = "x min", 
                                                   value = NULL) ),
-                   
                    column(width = 3, numericInput("xmax", 
                                                   label = "x max", 
                                                   value = NULL) ),
-                   
                    column(width = 3, numericInput("ymin", 
                                                   label = "y min", 
                                                   value = NULL) ),
-                   
                    column(width = 3, numericInput("ymax", 
                                                   label = "y max", 
                                                   value = NULL) ),
@@ -411,38 +410,57 @@ ui <- fluidPage(
                                                   label = "FDR value",
                                                   value = 0.05) ),
                    
-                   helpText("Note: Changing the s0 and FDR values is purely aesthetic for the
-               captions at the base of the plot. The plotted points remain unaffected."),
+                   column(width = 12, 
+                          helpText("Note: Changing the s0 and FDR values is purely aesthetic for the
+               captions at the base of the plot. The plotted points remain unaffected.") ),
                    
-                 ),
-                 
-                 br(),
-                 radioButtons("fdr.lines",
-                              label = "Display curves",
-                              choices = list("yes", "no"),
-                              selected = "yes", inline = T),
-                 
-                 radioButtons("go.term",
-                              label = "GO terms",
-                              choices = list("sig", "non-sig", "reset"),
-                              selected = "reset", inline = T),
-                 
-                 selectInput("palette",
-                             label = "GO terms color palette",
-                             choices = list("Viridis", "Plasma", "Inferno", "Rocket", "Lajolla", "Turku", "Hawaii", "Batlow"),
-                             selected = "Viridis"),
-                 
+                   column(width = 12, br()),
+                   column(width = 6, radioButtons("fdr.lines",
+                                                  label = "Display curves",
+                                                  choices = list("yes", "no"),
+                                                  selected = "yes", inline = T) ),
+                   
+                   column(width = 6, radioButtons("pt.sizes",
+                                                  label = "Average protein intensities",
+                                                  choices = list("yes", "no"),
+                                                  selected = "no", inline = T) ),
+                   
+                   
+                   column(width = 7, radioButtons("go.term",
+                                                  label = "GO terms",
+                                                  choices = list("sig", "non-sig", "reset"),
+                                                  selected = "reset", inline = T) ),
+                   
+                   column(width = 5, selectInput("palette",
+                                                 label = "GO terms color palette",
+                                                 choices = list("Viridis", "Plasma", "Inferno", "Rocket", "Lajolla", "Turku", "Hawaii", "Batlow"),
+                                                 selected = "Viridis") )
+                   
+                 )
     ),
     
     mainPanel(
-      
+      uiOutput("df.preview"),
+      dataTableOutput("dataframe"),
       br(),
       h4("Volcano Plot",  align = "center"),
-      plotOutput("volcanoplot"), #volcano plot
+      
+      ##volcano plot output with brush selection of points
+      plotOutput("volcanoplot",
+                 brush = "vplot.brush"),
       textInput("vplot.title",
                 label = "Volcano Plot Title (Optional)",
                 value = NULL,
                 placeholder = "Enter text..."),
+      
+      fluidRow(
+        ##initialize drop down list of protein labels
+        column(width = 3, selectizeInput("protein.labs",
+                                         label = "Manually select protein IDs:",
+                                         choices = list(),
+                                         multiple = T)),
+        column(width = 6, verbatimTextOutput("brushed.ids"))
+      ),
       
       br(),
       br(),
@@ -461,62 +479,105 @@ ui <- fluidPage(
 #Shiny Server ----
 server <- function(input, output, session) {
   
-  #process both protein and fdr curve input files
-  df.prot <- eventReactive(input$proteinfile, {
-    process.df(data = input$proteinfile$datapath)
-  })
-  df.curves <- eventReactive(input$curvesfile, {
-    read.table(input$curvesfile$datapath, header = T)
-  })
+  #1D annotation file
   df.1d <- eventReactive(input$onedfile, {
     read.delim(input$onedfile$datapath, header=T, 
                stringsAsFactors=F, comment.char = "#")
   })
   
-  ##create volcano plot with UI input variables   
-  output$volcanoplot <- renderPlot({
-    volcano_plot(df = df.prot(),
+  #Curve points file
+  df.curves <- eventReactive(input$curvesfile, {
+    read.table(input$curvesfile$datapath, header = T)
+  })
+  
+  #Protein input file
+  df.prot <- eventReactive(input$proteinfile, {
+    read.delim(input$proteinfile$datapath, na.strings = c("NA", "NaN"))
+  })
+  
+  #Add column names for selection through the UI
+  observe({
+    req(df.prot())
+    updateSelectInput(session,
+                      inputId = "left.gr",
+                      choices = colnames(df.prot()))
+    updateSelectInput(session,
+                      inputId = "right.gr",
+                      choices = colnames(df.prot()))
+    output$enter.range <- renderUI({
+      helpText("To calculate average protein intensities across groups, select columns for each group:")
+    })
+  })
+  
+  #Process the protein dataframe and calculate means across group columns
+  df.prot2 <- reactive({
+    req(df.prot(), input$left.gr, input$right.gr)
+    process.df(dataset = df.prot(),
+               left.range = input$left.gr,
+               right.range = input$right.gr )
+  })
+  
+  ##Preview df
+  observe({
+    req(df.prot2())
+    output$df.preview <- renderUI({
+      helpText(h4("Dataframe preview"))
+    })
+    output$dataframe <- renderDataTable({
+      df.prot2() %>% head(4) })
+    #fill dropdown list with protein names (labels) from which to choose
+    updateSelectizeInput(session,
+                         inputId = "protein.labs",
+                         choices = rownames(df.prot2()), 
+                         server = T )
+  })
+  
+  ##activate brush selection    
+  brushed.pts <- reactive({
+    brushedPoints(df.prot2(), input$vplot.brush)
+  })
+  ##display selected ids as text on the UI
+  output$brushed.ids <- renderPrint({ 
+    cat("Selected proteins: ", rownames(brushed.pts()) ) 
+  }) 
+  
+  ##create volcano plot using UI input variables  
+  vplot <- reactive({
+    volcano_plot(df = df.prot2(),
                  curves.df = df.curves(),
                  go.terms =  input$go.term,
                  palette.col = input$palette,
                  plot.title = input$vplot.title,
                  s0 = input$s.knot,
                  fdr = input$fdr.val,
-                 fdr.lines = input$fdr.lines )
-  
+                 group.cols = c(input$left.col, input$right.col),
+                 fdr.lines = input$fdr.lines,
+                 vary.sizes = input$pt.sizes,
+                 #show protein labels either by quick or fixed selection 
+                 select.pts = c(rownames(brushed.pts()), 
+                                input$protein.labs) 
+    ) 
   })
-
+  #send vplot to the UI
+  output$volcanoplot <- renderPlot({
+    vplot()
+  })
+  
+  ##Axes limit adjustments
   observeEvent(req(input$xmin | input$xmax | input$ymin | input$ymax), {
-    # updateNumericInput(session, "xmin", value = input$xmin)
-    # updateNumericInput(session, "xmax", value = input$xmax)
-    # updateNumericInput(session, "ymin", value = input$ymin)
-    # updateNumericInput(session, "ymax", value = input$ymax)
-    
     output$volcanoplot <- renderPlot({
-      
-      volcano_plot(df = df.prot(),
-                   curves.df = df.curves(),
-                   go.terms =  input$go.term,
-                   palette.col = input$palette,
-                   plot.title = input$vplot.title,
-                   s0 = input$s.knot,
-                   fdr = input$fdr.val,
-                   fdr.lines = input$fdr.lines )+
+      vplot()+
         coord_cartesian(xlim = c(input$xmin, input$xmax),
-                        ylim = c(input$ymin, input$ymax))
+                        ylim = c(input$ymin, input$ymax),
+                        expand = T)
     })  
-  
   })
-  #allow for the volcano plot to reset to the default figure
-  # observeEvent(req(input$go.term == "reset"), {
-  #   volcano_plot(df = df.prot(),
-  #                curves.df = df.curves(),
-  #                default.cols = c("#FF6666", "#00B1B2"))
-  # })
   
+  ##Volcano plot reset 
   observeEvent(input$reset, {
-    updateColourInput(session, inputId = "high.col", value = "#FF6666")
-    updateColourInput(session, inputId = "low.col", value = "#00B1B2") 
+    updateColourInput(session, inputId = "left.col", value = "#00B1B2")
+    updateColourInput(session, inputId = "right.col", value = "#FF6666")
+    output$volcanoplot <- renderPlot({ vplot() })
   })
   
   
@@ -525,7 +586,9 @@ server <- function(input, output, session) {
     onedheatmap(df.1d(), plot.title = input$hmplot.title)
   })
   
-}
+  
+  
+}#do 1, 2, 3, 4
 
 shinyApp(ui = ui, server = server)
 
