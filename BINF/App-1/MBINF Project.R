@@ -1,21 +1,28 @@
 ####HEATMAP ----
-library(ggplot2)
-library(gplots)
-library(ggrepel)
+# library(ggplot2)
+# library(ggpubr)
+# library(gplots)
+# library(ggrepel)
+# library(tidyverse)
+# library(reshape2)
+# require(colourpicker)
+# require(shiny)
+# require("shinyWidgets")
 
 
-#Added comment.char argument to skip the comment line
-#df <- read.delim("../Sylvain_1(keywords).txt", header=T, stringsAsFactors=F, comment.char = "#") 
-
-onedheatmap <- function(oned.annotation.enrichment.df, plot.title = "") {
+onedheatmap <- function(oned.df, plot.title = "") {
+  
+  oned.df <- oned.df %>%
+    mutate_at(c("Score", "P.value", "Benj..Hoch..FDR"), as.numeric)
+  
   #some annotations have the same name but belong to a different database
   #add additional column combining those entries
-  oned.annotation.enrichment.df$unique.annotation <- paste(oned.annotation.enrichment.df$Name, " (", oned.annotation.enrichment.df$Type , ")", sep="")
+  oned.df$unique.annotation <- paste(oned.df$Name, " (", oned.df$Type , ")", sep="")
   
   #unique annotations and celltypes
-  annotations <- sort(unique(oned.annotation.enrichment.df$unique.annotation))
+  annotations <- sort(unique(oned.df$unique.annotation))
   annotations <- annotations[!grepl("^\\+", annotations)]
-  celltypes <- sort(unique(oned.annotation.enrichment.df$Column))
+  celltypes <- sort(unique(oned.df$Column))
   
   #generate 1D score and pvalue(BH) matrix (takes long)
   M.score <- matrix(ncol=length(celltypes), nrow=length(annotations))
@@ -23,62 +30,45 @@ onedheatmap <- function(oned.annotation.enrichment.df, plot.title = "") {
   
   for(i in 1:length(celltypes)){
     for(j in 1:length(annotations)){
-      score.value <- oned.annotation.enrichment.df$Score[oned.annotation.enrichment.df$Column==celltypes[i] & oned.annotation.enrichment.df$unique.annotation==annotations[j]]
-      p.value <- oned.annotation.enrichment.df$Benj..Hoch..FDR[oned.annotation.enrichment.df$Column==celltypes[i] & oned.annotation.enrichment.df$unique.annotation==annotations[j]]
+      score.value <- oned.df$Score[oned.df$Column==celltypes[i] & oned.df$unique.annotation==annotations[j]]
+      p.value <- oned.df$Benj..Hoch..FDR[oned.df$Column==celltypes[i] & oned.df$unique.annotation==annotations[j]]
       if(length(score.value)==0){score.value <- NA}
       if(length(p.value)==0){p.value <- NA}
       M.score[j,i] <- score.value
       M.pvalue[j,i] <- p.value
     }
-    print(paste(i, celltypes[i], sep="; "))
+    #print(paste(i, celltypes[i], sep="; "))
   }
   
-  
-  m <- as.matrix(M.score)
+  m <- M.score
   rownames(m) <- annotations
   colnames(m) <- celltypes
   
-  ##m <- m[,c(2,3,1)]
   #Sequence of samples ('cell types' as currently above) for columns of heat map
-  m <- m[,c(1,2,3,4,5,6,7,8)]
+  m <- m[,c(1:8)]
   m[is.na(m)] <- 0
   
-  return ( heatmap.2(m,
-                     col = bluered(256),
-                     # breaks=col_breaks,
-                     #ColSideColors=NULL,
-                     margins = c(10, 20),
-                     trace = "none", 
-                     main = plot.title,
-                     xlab = "T-test differences",
-                     ylab = "Annotations",
-                     # labRow = row.label,
-                     # labCol = col.label,
-                     #lmat=rbind(c(4,3,3), c(2,1,1), c(2,1,1)), 
-                     #lhei=c(1,2,3), 
-                     #lwid=c(1,2,3),
-                     #scale = c("none"),
-                     #symbreaks = min(18, na.rm=TRUE),
-                     na.color="grey",
-                     na.rm=F,
-                     #cexRow = .9, cexCol = .9,
-                     #main = header.heatmap, 
-                     dendrogram = "none", 
-                     density.info = "none",
-                     Colv = F,
-                     Rowv = T,
-                     cexRow = 1,
-                     cexCol = 1,
-                     # block sepration
-                     colsep = c(1:ncol(m)),
-                     rowsep = c(1:nrow(m)),
-                     sepcolor="grey",
-                     sepwidth=c(0.05,0.05))
-           
-           #cellnote=round(m.exclusive.proteins, 1),
-           #notecol="black",
-           #notecex=.7
+  
+  m <- melt(m)
+  colnames(m) <- c("Annotations", "T-test differences", "value")
+  
+  return(
+    ggplot(data = m, aes(x = `T-test differences`, 
+                         y = reorder(Annotations, value), 
+                         fill = value))+
+      geom_tile(colour = "grey", linewidth = 1)+
+      scale_fill_gradientn(colors = c(low = "blue", mid = "white", high = "red"),
+                           na.value = "grey")+
+      scale_y_discrete(position = "right")+
+      guides(fill = guide_colourbar(title = "Colour Key"))+
+      theme(axis.title = element_text(face = "bold"),
+            axis.text.x = element_text(angle = 90),
+            axis.text = element_text(colour = "black"),
+            legend.position = "left")+
+      labs(title = plot.title, 
+           y = "Annotations")
   )
+
 }
 
 
@@ -97,8 +87,6 @@ require(ggnewscale)
 ##Features
 #Can show levels of significance
 #Can color code for gene ontology terms among sigs and nonsigs
-#Working on size differences for protein intensities based on avgs
-#Working on most sig labels
 #Don't move app file out of #App-1 folder
 #setwd to app location for easy access
 
@@ -326,19 +314,28 @@ volcano_plot <- function(df, curves.df,
 }
 
 
-####test 
+####test ----
 # dt <- read.delim("../ttest_table.txt", na.strings = c("NA", "NaN"))
 # dt <- process.df(dataset = dt, left.range = c("LFQ.intensity.WT.1", "LFQ.intensity.WT.2", "LFQ.intensity.WT.3", "LFQ.intensity.WT.4"), right.range = c("LFQ.intensity.401.1", "LFQ.intensity.401.2", "LFQ.intensity.401.3", "LFQ.intensity.401.4"))
 #    curvesdff <- read.table("../curve_matrix.txt", header = T)
 #volcano_plot(dt, curvesdff, go.terms = "non-sig", fdr.lines = "no", select.pts = c("A6T4E4"))
-
+# 
+#  df <- read.delim("../1d annot.txt", stringsAsFactors = F, header=T)
+#  df<- df[-c(1),]
+# unique.annot.types <- df %>%
+#    group_by(Type) %>%
+#    group_split()
+#  plots <- lapply(unique.annot.types,
+#                  function(x) onedheatmap(x,
+#                                          plot.title = paste(unique(x$Type))
+#                  ))
+# plots
+# ggarrange(plotlist = plots)
+# onedheatmap(df)
 
 
 
 ##SHINY GUI ----
-require(colourpicker)
-require(shiny)
-require("shinyWidgets")
 #flowchart 
 #perseus vs my result
 #these proteins associated with this go term
@@ -452,7 +449,6 @@ ui <- fluidPage(
                 label = "Volcano Plot Title (Optional)",
                 value = NULL,
                 placeholder = "Enter text..."),
-      
       fluidRow(
         ##initialize drop down list of protein labels
         column(width = 3, selectizeInput("protein.labs",
@@ -465,15 +461,20 @@ ui <- fluidPage(
       br(),
       br(),
       br(),
-      h4("1D Annotation Heatmap", align = "center", ),
-      plotOutput("onedheatmap"),
-      textInput("hmplot.title",
-                label = "Heat Map Title (Optional)",
-                value = NULL,
-                placeholder = "Enter text..."),
+      ##1D plots output
+      h4("1D Annotation Heatmaps", align = "center", ),
+      plotOutput("onedhm1.bio.proc"),
+      br(),
+      plotOutput("onedhm2.cell.comp"),
+      br(),
+      plotOutput("onedhm3.mol.func"),
+      br(),
+      plotOutput("onedhm4.keywords"),
     )
   )
 )
+
+
 
 
 #Shiny Server ----
@@ -481,8 +482,8 @@ server <- function(input, output, session) {
   
   #1D annotation file
   df.1d <- eventReactive(input$onedfile, {
-    read.delim(input$onedfile$datapath, header=T, 
-               stringsAsFactors=F, comment.char = "#")
+    read.delim("../1d annot.txt", stringsAsFactors = F, header=T)
+    df<- df[-c(1),]
   })
   
   #Curve points file
@@ -581,10 +582,22 @@ server <- function(input, output, session) {
   })
   
   
-  #Heatmap 
-  output$onedheatmap <- renderPlot({
-    onedheatmap(df.1d(), plot.title = input$hmplot.title)
+  ##Heatmap plot list
+  plotlist.1d <- reactive({
+    unique.annot.types <- df.1d() %>%
+      group_by(Type) %>%
+      group_split()
+    lapply(unique.annot.types, 
+           function(x) onedheatmap(x, 
+                                   plot.title = paste(unique( x$Type ))
+           ))
   })
+  
+  #plot heatmaps individually
+  output$onedhm1.bio.proc <- renderPlot({ plotlist.1d()[1] }) #render 1d plot1
+  output$onedhm2.cell.comp <- renderPlot({ plotlist.1d()[2] }) #render 1d plot2
+  output$onedhm3.mol.func <- renderPlot({ plotlist.1d()[3] }) #render 1d plot3
+  output$onedhm4.keywords <- renderPlot({ plotlist.1d()[4] }) #render 1d plot4
   
   
   
