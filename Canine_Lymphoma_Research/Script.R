@@ -20,14 +20,13 @@ T.df <- ct_data[23:36,]
 results <- as.data.frame(
   col_wilcoxon_twosample(x = B.df, y = T.df,exact = TRUE))
 
-#This step adjusts for multiple testing errors using the Benjamin and Hochberg correction method (Yoav Benjamini & Hochberg, 1995). Add adjusted p-values to the results df. Place the new column right after the unadjusted pvalue column.
+#This step adjusts for multiple testing errors using the Benjamin and Hochberg correction method (Yoav Benjamini & Hochberg, 1995). Add adjusted p-values to the results df. 
 results <- results %>%
   mutate(pvalue.adj = p.adjust(pvalue, method = "BH")) %>%
   relocate(pvalue.adj, .after = pvalue)
 
 #Select significant results with p < 0.05. 
 sig.res <- results[results$pvalue.adj < 0.05, 5:6]  #Final result. 
-unadj.sig.res <- results[results$pvalue < 0.05,] #For comparison sake. Only one additional miRNA here that's absent in the adjusted pvalue results
 
 #Export sig res
 write.csv(sig.res, file = "BT_updated_sigdiff.csv", row.names = T)
@@ -346,3 +345,63 @@ new_data <- as.data.frame(
   new_data[, c("hsa-miR-34a-5p", "hsa-miR-29b-3p", "cfa-miR-181b", "cfa-miR-181a", "hsa-miR-21-5p")] )
 new.preds <- predict(final_model$fit$finalModel, newdata = new_data, type = "class")
 new_data$Predictions <- new.preds
+
+write.csv(new_data, file = "Test_data_with_predictions.csv")
+
+####5. Differences in miRNA expression for patients receiving CHOP chemo (remission vs non-remission) ----
+#B6, B10, and B17 did not reach remission in B 
+#T2, T5, T6 in T
+
+#B and T dataframes
+B.df <- ct_data[1:22,]
+T.df <- ct_data[23:36,]
+ 
+B.remission <- B.df[-c(6, 10, 17), ]
+B.nonremission <- B.df[c(6, 10, 17), ]
+
+T.remission <- T.df[-c(2, 5, 6), ]
+T.nonremission <- T.df[c(2, 5, 6), ]
+
+#Mann Whitney test for remission vs remission in B and T with Benjamin and Hochberg corrected pvalues. df1 and df2 are the different dfs to be compared (e.g remission vs nonremission)
+MW_test_adjusted <- function(df1, df2) { 
+  results <- col_wilcoxon_twosample(df1, df2, exact = T)
+  results %>% 
+    mutate(pvalue.adj = p.adjust(pvalue, method = "BH")) %>%
+    relocate(pvalue.adj, .after = pvalue)
+}
+
+rem.nonrem.B <- MW_test_adjusted(B.remission, B.nonremission)
+rem.nonrem.T <- MW_test_adjusted(T.remission, T.nonremission)
+
+#Export results (none are significant based on padjust)
+write.csv(rem.nonrem.B[,5:6], file = "Rem_Nonrem_Bcell.csv")
+write.csv(rem.nonrem.T[,5:6], file = "Rem_Nonrem_Tcell.csv")
+
+
+
+
+####6. Differences in miRNA expression for patients receiving CHOP chemo (alive vs deceased at one year)
+
+#Add OS days to B and T dfs
+B.df$OSdays <- c(1052, 343, 1328,	1331,	744, 28,	261, 110,	308,	67,	288,	78,	489,	489,	328,	221,	123,	501,	594, 154, NA, 142)
+#remove 21B since its OS days is NA
+B.df <- na.omit(B.df)
+
+T.df$OSdays <- c(152,	5, 160, 293,	22,	20,	243,	849,	120,	183,	103,	121,	128,	100)
+
+#Separate dfs by alive vs not alive at one year
+B.alive <- B.df[B.df$OSdays >= 365, ]
+B.deceased <- B.df[B.df$OSdays < 365, ]
+
+T.alive <- T.df[T.df$OSdays >= 365, ]
+T.deceased <- T.df[T.df$OSdays < 365, ]
+
+#Use the function from section #5 to compare miRNA expressn in alive vs deceased dataframes
+OS.col <- ncol(B.df) #index of the OS column (last column of B or T df)
+
+alive.vs.deceased.B <- MW_test_adjusted(B.alive[, -OS.col], B.deceased[, -OS.col])
+alive.vs.deceased.T <- MW_test_adjusted(T.alive[, -OS.col], T.deceased[, -OS.col])
+
+#Export results (none are significant based on padjust)
+write.csv(alive.vs.deceased.B[, 5:6], "Bcell_alive_vs_deceased.csv")
+write.csv(alive.vs.deceased.T[, 5:6], "Tcell_alive_vs_deceased.csv")
