@@ -60,17 +60,18 @@ pfs.B <- pfs[16:37, ]
 os.T <- os[1:14, ]
 os.B <- os[16:37, ]
 
-#Change survival dataset and range of mirna columns using these variables
-#pfs.B for example 
+#Change survival input dataframe and mirna column range with the following variables.
+#View for pfs.B mirnas for example
 survdf <- pfs.B #change df here
 range.col <- 6:27 #change mirna column range here
 
-#Then run these lines. Each plot will show on the viewer pane
+##Exploratory----
+#You can run these lines to view all survival plots for all mirnas regardless of significance. Each plot will show on the viewer pane
 surv.fits <- lapply(survdf[range.col], function(x) surv_fit(Surv(PFS.days, Censoring) ~ x, data = survdf))
-surv.plots <- ggsurvplot_list(surv.fits, data = survdf, pval = T)
-arrange_ggsurvplots(surv.plots[1:8], ncol = 4, nrow = 2)  #First 8 plots at once
+surv.plots <- ggsurvplot_list(surv.fits, data = pfs.B, pval = T)
+surv.plots
+arrange_ggsurvplots(surv.plots[1:8], ncol = 4, nrow = 2)  #First 8 plots at once  
 
-survfit(Surv(PFS.days, Censoring) ~ miR.18a, data = pfs.B)
 
 ##Main analysis----
 #---- function for plotting curves----
@@ -106,7 +107,7 @@ kmplot <- function(surv.obj, df, legend.label = "", xlabel = "Days", ylabel = "P
   main.plot$plot+
     theme(legend.text = element_text(size = 8),
           legend.title = element_text(size = 8),
-          axis.title = element_text(size = 9))+
+          axis.title = element_text(size = 8))+
     annotate("text",
              x = xmax-100,
              y = 1,
@@ -126,16 +127,15 @@ kmplot <- function(surv.obj, df, legend.label = "", xlabel = "Days", ylabel = "P
 
 
 #---- function for fitting survival data ----
-#This function extracts the pvalues of statistically significant miRNAs and plots those miRNA only. The surv_fit() function (with the underscore) is used instead of survfit() since the former supports surv lists. As.formula() was used with miRNA names to fit the final plots since we want the mirna names to be displayed on the plots. 
+#This function extracts the pvalues of statistically significant miRNAs and plots those miRNA survival data only. The surv_fit() function is used instead of survfit() since the former supports surv lists. As.formula() was used with miRNA names to fit the final plots since we want those names to be displayed on the plots.
 
 ###ARGUMENTS
 #df = full df including censoring data
 #col.range = range of columns to be fitted (miRNAs only)
-#pfs.os.col = index of the column containing PFS or OS values. 3 is the default column index
 #Plot customization arguments applicable to km.plot()
-plot.sig.fits <- function(df, col.range, pfs.os.col = 3, legend.label = "", xlabel = "Days", ylabel = "Percent survival"){
+plot.sig.fits <- function(df, col.range, legend.label = "", xlabel = "Days", ylabel = "Percent survival"){
   subset.df <- df[col.range] 
-  time.col <- df[,pfs.os.col]  #PFS or OS time column
+  time.col <- df[,1]  #PFS or OS time column
   
   #fit all miRNA survival data
   all.fits <- lapply(subset.df, function(x) surv_fit(Surv(time.col, Censoring) ~ x, data = df))
@@ -178,38 +178,171 @@ plot.sig.fits <- function(df, col.range, pfs.os.col = 3, legend.label = "", xlab
 
 
 #---- Results ----
-#One can have two outputs with the above function: a dataframe containing all pvalues OR the significant Kaplan Meier (km) plots. 
-
+#One can select pvalues or plots only for the output
 #PFS for B cell
-pfs.B.km <- plot.sig.fits(pfs.B, col.range = 6:27, legend.label = "B cell:  ") 
+pfs.B.km <- plot.sig.fits(pfs.B, 4:25, legend.label = "B cell:  ") 
 pfs.B.km
-ggarrange(plotlist = pfs.B.km$plot.list, labels = "AUTO") #ggarrange all PFS.B plots at once
-pfs.B.km$all.pvalues 
-#PFS for T cell 
-pfs.T.km <- plot.sig.fits(pfs.T, 5:27, legend.label = "T cell:  ") 
-pfs.T.km
-#Join pfs B and T
-PFS.BT <- c(pfs.B.km$plot.list, pfs.T.km$plot.list)
-ggarrange(plotlist = PFS.BT, ncol = 3, labels = "AUTO")
+ggarrange(plotlist = pfs.B.km$plot.list, labels = "AUTO") #all PFS.B plots at once
+pfs.B.km$all.pvalues
 
+#PFS for T cell - no signif miRNAs
+pfs.T.km <- plot.sig.fits(pfs.T, 3:25, legend.label = "T cell:  ") 
 
 #OS for B cell
-os.B.km <- plot.sig.fits(os.B, 5:27, legend.label = "B cell:  ") 
+os.B.km <- plot.sig.fits(os.B, 3:25, legend.label = "B cell:  ") 
 ggarrange(plotlist = os.B.km$plot.list)
+
 #OS for T cell 
-os.T.km <- plot.sig.fits(os.T, 5:27, legend.label = "T cell:  ") 
+os.T.km <- plot.sig.fits(os.T, 3:25, legend.label = "T cell:  ") 
 ggarrange(plotlist = os.T.km$plot.list) 
-#Join OS B and T. 7 total significant mirnas; split into 6 and 1 per page 
-OS.BT <- c(os.T.km$plot.list, os.B.km$plot.list)
-ggarrange(plotlist = OS.BT[1:6], labels = "AUTO")
-ggarrange(plotlist = OS.BT[7], labels = "G", ncol = 3)
+
+#Join OS B and T
+test <- c(os.T.km$plot.list, os.B.km$plot.list)
+ggarrange(plotlist = test[1:4], labels = "AUTO")
+ggarrange(plotlist = test[5:7], labels = c("E", "F", "G"))
 
 #Export all pvalues
 write.csv(pfs.B.km$all.pvalues, file = "PFS_Bcell.csv", row.names = T)
-write.csv(pfs.T.km$all.pvalues, file = "PFS_Tcell.csv", row.names = T)
+write.csv(pfs.T.km, file = "PFS_Tcell.csv", row.names = T)
 write.csv(os.B.km$all.pvalues, file = "OS_Bcell.csv", row.names = T)
 write.csv(os.T.km$all.pvalues, file = "OS_Tcell.csv", row.names = T)
 
 
 
+####3. Classification of B and T cell lymphoma ----
+library(caret)
+library(tidyverse)
+library(pROC)
 
+#Use transposed processed count dataframe from #1. Subset the required columns
+df <- ct_data %>%
+  select(c("dre-miR-18a", "hsa-miR-19a-3p", "cfa-miR-19b", "hsa-miR-21-5p", "hsa-miR-29b-3p", "hsa-miR-34a-5p", "cfa-miR-125a", "hsa-miR-130b-3p", "hsa-miR-146a-5p", "cfa-miR-181a", "cfa-miR-181b", "cfa-miR-181c", "hsa-miR-182-5p"))
+
+#Add labels for B and T cells
+df$Celltype <- as.factor(rep(c("Bcell", "Tcell"), c(22, 14)))
+
+#Ensure that the values are "numeric" and celltype, "factor"
+lapply(df, class)
+
+#Split train and test data (75:25)
+set.seed(2)
+train.index <- createDataPartition(df$Celltype, p = .75, list = F)
+
+train.data <- df[train.index, ] 
+test.data <- df[-train.index, ] 
+class.col <- 14
+num.feats <- ncol(train.data) #number of features
+
+trainX <- train.data[, -class.col]  #features
+trainY <- train.data[,class.col]  #class
+
+
+
+#Function to do RFE and training with hyperparameter tuning
+rfe_train <- function(X, Y, algorithm, rfe.ctrl, tr.ctrl) {
+  rfe(x = X, 
+      y = Y, 
+      sizes = seq(5, num.feats, 2),
+      rfeControl = rfe.ctrl,
+      
+      #pass to train()
+      method = algorithm,
+      tuneLength = 6,
+      trControl = tr.ctrl)
+}
+
+
+
+caretFuncs$summary <- prSummary #use precision-recall summary
+rfectrl <- rfeControl(functions = caretFuncs,
+                      method = "repeatedcv",
+                      number = 10,
+                      repeats = 5,
+                      verbose = T)
+
+trctrl <- trainControl(method = "LOOCV",
+                        classProbs = T,
+                       summaryFunction = prSummary)
+
+#KNN 
+set.seed(2)
+rfe.knn <- rfe_train(trainX, trainY, algorithm = "knn", rfectrl, trctrl)
+rfe.knn
+rfe.knn$fit
+
+#Linear SVM
+set.seed(2)
+rfe.svm <- rfe_train(trainX, trainY, "svmLinear", rfectrl, trctrl)
+rfe.svm
+rfe.svm$fit
+
+
+#create a function to predict new data and return metrics
+predict_new <- function (model, newdataX, newdataY) {
+  pred.class <- predict(model, newdataX, 
+                        type = ifelse(class(model) == "train", 
+                                      yes = "raw", 
+                                      no = "class")) #predict class ("raw" for svm)
+  pred.prob <- predict(model, newdataX, type = "prob") #predict prob
+  
+  conf.mat <- confusionMatrix(pred.class, 
+                              newdataY, 
+                              mode = "prec_recall") #prediction metrics
+  auroc <- roc(pred.prob[,1], response = newdataY) #auc
+  ci.auroc <- ci.auc(auroc) #conf interval of auc
+
+  return(
+    list(conf.mat, auroc, ci.auroc) )
+}
+
+#Extract selected features for each model
+knn.feats <- predictors(rfe.knn)
+svm.feats <- predictors(rfe.svm)
+
+#Test models with (already seen) training data 
+set.seed(2)
+predict_new(rfe.knn$fit$finalModel, trainX[knn.feats], newdataY = trainY) #knn
+predict_new(rfe.svm$fit, trainX[svm.feats], newdataY = trainY) #svm
+
+
+#Test with real test data 
+testY <- test.data[, class.col]
+
+set.seed(2)
+predict_new(rfe.knn$fit$finalModel, test.data[knn.feats], newdataY = testY) #knn
+predict_new(rfe.svm$fit, test.data[svm.feats], newdataY = testY) #knn
+
+
+#KNN is chosen as the final model because metrics indicate less overfitting in KNN vs SVM 
+final.trainX <- df[, -class.col] 
+final.trainY <- df[,class.col]
+
+set.seed(2)
+final_model <- rfe_train(X = final.trainX, Y = final.trainY, algorithm = "knn", rfectrl, trctrl)
+predictions <- final_model$fit$pred[final_model$fit$pred$k == final_model$fit$bestTune$k, ] #predictions at optimal k
+
+confusionMatrix(predictions$pred, predictions$obs, mode = "prec_recall")
+auroc <- roc(predictor = predictions$Bcell, response = predictions$obs)
+plot(auroc, print.auc = T, 
+     auc.polygon = T, 
+     auc.polygon.col = "#B9D9EB", 
+     max.auc.polygon = T, 
+     max.auc.polygon.col = "beige")
+ci.auc(auroc) 
+        
+
+
+####4. Use final model on new data- not part of the dataset ----
+new_data <- readxl::read_excel("Test 1.1.xlsx")
+
+#extract the ct values and transpose dataframe 
+new_data <- new_data %>%
+  slice(1:5) %>%
+  column_to_rownames(var = "...1") %>%
+  t(.)
+
+#reorder to match the order in predictors(final_model) 
+new_data <- as.data.frame(
+  new_data[, c("hsa-miR-34a-5p", "hsa-miR-29b-3p", "cfa-miR-181b", "cfa-miR-181a", "hsa-miR-21-5p")] )
+new.preds <- predict(final_model$fit$finalModel, newdata = new_data, type = "class")
+new_data$Predictions <- new.preds
