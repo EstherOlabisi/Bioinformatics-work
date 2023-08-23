@@ -348,6 +348,9 @@ new_data$Predictions <- new.preds
 
 write.csv(new_data, file = "Test_data_with_predictions.csv")
 
+
+
+
 ####5. Differences in miRNA expression for patients receiving CHOP chemo (remission vs non-remission) ----
 #B6, B10, and B17 did not reach remission in B 
 #T2, T5, T6 in T
@@ -362,7 +365,7 @@ B.nonremission <- B.df[c(6, 10, 17), ]
 T.remission <- T.df[-c(2, 5, 6), ]
 T.nonremission <- T.df[c(2, 5, 6), ]
 
-#Mann Whitney test for remission vs remission in B and T with Benjamin and Hochberg corrected pvalues. df1 and df2 are the different dfs to be compared (e.g remission vs nonremission)
+#Mann Whitney test for remission vs remission in B and T, with Benjamin and Hochberg corrected pvalues. df1 and df2 are the different dfs to be compared (e.g remission vs nonremission)
 MW_test_adjusted <- function(df1, df2) { 
   results <- col_wilcoxon_twosample(df1, df2, exact = T)
   results %>% 
@@ -384,7 +387,7 @@ write.csv(rem.nonrem.T[,5:6], file = "Rem_Nonrem_Tcell.csv")
 
 #Add OS days to B and T dfs
 B.df$OSdays <- c(1052, 343, 1328,	1331,	744, 28,	261, 110,	308,	67,	288,	78,	489,	489,	328,	221,	123,	501,	594, 154, NA, 142)
-#remove 21B since its OS days is NA
+#remove 21B since its OS days is NA 
 B.df <- na.omit(B.df)
 
 T.df$OSdays <- c(152,	5, 160, 293,	22,	20,	243,	849,	120,	183,	103,	121,	128,	100)
@@ -398,10 +401,9 @@ T.deceased <- T.df[T.df$OSdays < 365, ]
 
 #Use the function from section #5 to compare miRNA expressn in alive vs deceased dataframes
 OS.col <- ncol(B.df) #index of the OS column (last column of B or T df)
-
 alive.vs.deceased.B <- MW_test_adjusted(B.alive[, -OS.col], B.deceased[, -OS.col])
 alive.vs.deceased.T <- MW_test_adjusted(T.alive[, -OS.col], T.deceased[, -OS.col])
 
-#Export results (none are significant based on padjust)
-write.csv(alive.vs.deceased.B[, 5:6], "Bcell_alive_vs_deceased.csv")
-write.csv(alive.vs.deceased.T[, 5:6], "Tcell_alive_vs_deceased.csv")
+#Export results (none are significant based on p.adjust)
+write.csv(alive.vs.deceased.B[, 5:6], "Bcell_alive_vs_deceased_at_1yr.csv")
+write.csv(alive.vs.deceased.T[, 5:6], "Tcell_alive_vs_deceased_at_1yr.csv")
