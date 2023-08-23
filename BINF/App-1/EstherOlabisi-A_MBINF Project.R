@@ -11,73 +11,12 @@ require(reshape2)
 require(shinyWidgets)
 require(scales)
 
-####1. HEATMAP ----
-onedheatmap <- function(oned.df, plot.title = "") {
-  
-  oned.df <- oned.df %>%
-    mutate_at(c("Score"), as.numeric)
-  
-  #some annotations have the same name but belong to a different database
-  #add additional column combining those entries
-  oned.df$unique.annotation <- paste(oned.df$Name, " (", oned.df$Type , ")", sep="")
-  
-  #unique annotations and celltypes
-  annotations <- sort(unique(oned.df$unique.annotation))
-  annotations <- annotations[!grepl("^\\+", annotations)]
-  celltypes <- sort(unique(oned.df$Column))
-  
-  #generate 1D score matrix
-  M.score <- matrix(ncol=length(celltypes), nrow=length(annotations))
-  
-  for(i in 1:length(celltypes)){
-    for(j in 1:length(annotations)){
-      score.value <- oned.df$Score[oned.df$Column==celltypes[i] & oned.df$unique.annotation==annotations[j]]
-      if(length(score.value)==0){score.value <- NA}
-      M.score[j,i] <- score.value
-    }
-  }
-  
-  m <- M.score
-  rownames(m) <- annotations
-  colnames(m) <- celltypes
-  
-  #Sequence of samples ('cell types' as currently above) for columns of heat map
-  m <- m[,c(1:8)]
-  m[is.na(m)] <- 0
-  
-  #collapse matrix for use in ggplot
-  m <- melt(m)
-  colnames(m) <- c("Annotations", "T-test differences", "value")
-  
-  return(
-    ggplot(data = m, aes(x = `T-test differences`, 
-                         y = reorder(Annotations, value), 
-                         fill = value))+
-      geom_tile(colour = "grey", linewidth = 1)+
-      scale_fill_gradientn(colors = c(low = "blue", mid = "white", high = "red"),
-                           na.value = "grey")+
-      scale_y_discrete(position = "right")+
-      guides(fill = guide_colourbar(title = "Colour Key"))+
-      theme(axis.title = element_text(face = "bold"),
-            axis.text.x = element_text(angle = 90),
-            axis.text = element_text(colour = "black"),
-            legend.position = "left")+
-      labs(title = plot.title, 
-           y = "Annotations")
-  )
-
-}
 
 
-
-
-####2. VOLCANO PLOT ----
+####1. PROCESS DATA MATRIX ----
 require(RColorBrewer)
 require(ggnewscale)
 
-
-
-#A function to process input data ---- 
 #Read protein.txt matrix processed in Perseus for a volcano plot. Remove all comment rows. 
 #Change column names to shorter generic names that are easier to work with. 
 #prot.dataset: Imported from Perseus following quality control, two samples t-test, and GO enrichment
@@ -136,7 +75,72 @@ process.df <- function(prot.dataset, left.range, right.range) {
 
 
 
-#A function for the Volcano plot: ----
+
+
+####2. 1D HEATMAPS ----
+#This function accepts the dataframe produced after 1D annotation enrichment in Perseus. The title argument is optional
+onedheatmap <- function(oned.df, plot.title = "") {
+  
+  oned.df <- oned.df %>%
+    mutate_at(c("Score"), as.numeric)
+  
+  #some annotations have the same name but belong to a different database
+  #add additional column combining those entries
+  oned.df$unique.annotation <- paste(oned.df$Name, " (", oned.df$Type , ")", sep="")
+  
+  #unique annotations and celltypes
+  annotations <- sort(unique(oned.df$unique.annotation))
+  annotations <- annotations[!grepl("^\\+", annotations)]
+  celltypes <- sort(unique(oned.df$Column))
+  
+  #generate 1D score matrix
+  M.score <- matrix(ncol=length(celltypes), nrow=length(annotations))
+  
+  for(i in 1:length(celltypes)){
+    for(j in 1:length(annotations)){
+      score.value <- oned.df$Score[oned.df$Column==celltypes[i] & oned.df$unique.annotation==annotations[j]]
+      if(length(score.value)==0){score.value <- NA}
+      M.score[j,i] <- score.value
+    }
+  }
+  
+  m <- M.score
+  rownames(m) <- annotations
+  colnames(m) <- celltypes
+  
+  #Sequence of samples ('cell types' as currently above) for columns of heat map
+  m <- m[,c(1:8)]
+  m[is.na(m)] <- 0
+  
+  #collapse matrix for use in ggplot
+  m <- melt(m)
+  colnames(m) <- c("Annotations", "T-test differences", "value")
+  
+  return(
+    ggplot(data = m, aes(x = `T-test differences`, 
+                         y = reorder(Annotations, value), 
+                         fill = value))+
+      geom_tile(colour = "grey", linewidth = 1)+
+      scale_fill_gradientn(colors = c(low = "blue", mid = "white", high = "red"),
+                           na.value = "grey")+
+      scale_y_discrete(position = "right")+
+      guides(fill = guide_colourbar(title = "Colour Key"))+
+      theme(axis.title = element_text(face = "bold"),
+            axis.text.x = element_text(angle = 90),
+            axis.text = element_text(colour = "black"),
+            text = element_text(size = 16),
+            legend.position = "left")+
+      labs(title = plot.title, 
+           y = "Annotations")
+  )
+  
+}
+
+
+
+
+
+####3. VOLCANO Plot ----
 #The function requires a dataframe that has been processed by process.df() (step 1). It also required the curves.df exported from Perseus to create the lines on the volcano plot. The other arguments are optional.
 #go.terms = display GO terms for significant or non-significant proteins
 #plot.title = custom plot title top left
@@ -144,7 +148,7 @@ process.df <- function(prot.dataset, left.range, right.range) {
 #s0 = s0 value to be shown on the plot. Default = 0.1
 #fdr = fdr value to be shown on the plot. Default = 0.05
 #fdr.lines = 'yes' to show lines and 'no' to remove lines
-#palette.col = based on hcl.color() palettes. "Viridis" is the default one
+#palette.col = based on hcl.colors() palettes. "Viridis" is the default one
 
 volcano_plot <- function(df, curves.df, 
                          go.terms = "", which.go = "Keywords", plot.title = "", 
@@ -174,6 +178,7 @@ volcano_plot <- function(df, curves.df,
   ns.sz = 2 #non-sig shape size  
   ns.col = "grey" #non-sig colour
   s.sz = 4  #sig shape size
+  text.sz = 18
   
   #Base volcano plot to plot points, fdr curves, axes boundaries, and other custom arguments.
   base_vplot <- ggplot(data = ns.df, 
@@ -193,16 +198,18 @@ volcano_plot <- function(df, curves.df,
     theme_minimal()+
     theme(plot.title = element_text(face="bold", size = 20),
           plot.caption = element_text(
-            colour = "darkviolet", size = 11))
+            colour = "darkviolet", size = 11),
+          axis.line = element_line(colour = "black"),
+          text = element_text(size = text.sz))
   
   
   #Fdr curves layer 
   curve.plot <- geom_line(data = curves.df, aes(x, y), linetype=2)
-  
   #Layer for labelling points 
-  label.pt.plot <- geom_label_repel(data = select.pts, 
+  label.pt.plot <- geom_label_repel(data = select.pts,
                                     aes(label = rownames(select.pts)),
                                     nudge_y = 0.4,  fill = "grey")
+  
   
   ###Adding layers to the base plot
   #Add GO terms for sig proteins
@@ -217,7 +224,7 @@ volcano_plot <- function(df, curves.df,
       num.sig.go, 
       palette.col), 
       na.value = alpha(ns.col, a)) + 
-    label.pt.plot
+    label.pt.plot 
   
   #Add GO terms for non-sig proteins. Grey out sig proteins. 
   nonsig.go <- base_vplot +
@@ -254,7 +261,7 @@ volcano_plot <- function(df, curves.df,
     scale_size_binned(range = c(1,8),
                       name = paste0("Average Intensity ", grp.names[2]),
                       n.breaks = 4) + 
-    label.pt.plot
+    label.pt.plot 
   
   #Options: GO term plot for sig proteins, with fdr lines and without fdr lines
   if (go.terms == "significant" && fdr.lines == "yes") {
@@ -304,7 +311,7 @@ volcano_plot <- function(df, curves.df,
         scale_fill_manual(values = group.cols)+
         guides(fill = guide_legend(order = 1))+
         label.pt.plot +
-        theme(legend.spacing = unit(-0.5, "cm"))
+        theme(legend.spacing = unit(-0.5, "cm")) 
     )
   }
   
@@ -314,32 +321,52 @@ volcano_plot <- function(df, curves.df,
 
 
 
-####3. PCA plot ---- 
+####4. PCA plot ---- 
 library(ggfortify)
 library(ggrepel)
 
 #This function also accepts the processed dataframe from step 1 and creates a PCA of all intensity columns.
-#Serial ID are removed from group names so that eclipses are drawn by group
-pca_plot <- function(df) {
+#Serial ID are removed from group names so that ellipses are drawn by group
+
+
+pca_plot <- function(df, ellipse = "yes") {
   counts <- df[, grep("intensity", colnames(df), value = T)]
   counts <- na.omit(counts)
   counts <- as.data.frame(t(counts)) 
   pca <- prcomp(counts) 
   counts$Group.names <- sub("\\.\\d+$", "", rownames(counts)) #remove serial numbers to extract group names
+  text.sz = 16
+  point.sz = 3
+  scl = 0
   
-  autoplot(pca, data = counts, scale = 0, colour = "Group.names", frame = T, frame.type = "norm")+
+  pca_ellipse <- autoplot(pca, data = counts, size = point.sz, 
+                          scale = scl, colour = "Group.names", frame = T, frame.type = "norm") + 
     guides(colour=guide_legend("Sample Type"), fill = "none")+
-    coord_fixed()+
     theme_bw()+
     theme(axis.line = element_line(colour = "black"),
+          text = element_text(size = text.sz),
           panel.border = element_blank())
+    
+  
+  pca_plain <- autoplot(pca, data = counts, size = point.sz, 
+                        scale = scl, colour = "Group.names") + guides(colour=guide_legend("Sample Type"), fill = "none")+
+    theme_bw()+
+    theme(axis.line = element_line(colour = "black"),
+          text = element_text(size = text.sz),
+          panel.border = element_blank())
+
+  
+  if (ellipse == "yes") {
+    pca_ellipse
+    
+  } else {
+    pca_plain
+  }
 }
+  
 
-
-
-
-####4. S-curve plot ----
-#The function accepts the same dataframe from step 1 but only produces S-curves for the group pair (e.g WT vs MT) in the volcano plot
+####5. S-curve plot ----
+#The function accepts the same dataframe produced after step 1 but only produces S-curves for the group pair (e.g WT vs MT) in the volcano plot
 #The function create one s-curve plot for each group and puts them on the same image with ggarrange
 
 scurve <- function(df) {
@@ -351,21 +378,29 @@ scurve <- function(df) {
   grp.names <- unique(
     sig.df[, grep("significant", colnames(sig.df))] ) 
   grp.names <- str_split_1(grp.names, "_")  
+  text.sz = 16
   
   left.gr.pl <- ggplot(data = ranked.df,
                        aes(x = Left.rank, y = Left.group))+
     geom_point(size = 2, colour = "royalblue")+
-    labs(x = paste(grp.names[2], "Proteins ranked by iBAQ Intensity"),
+    labs(x = paste(grp.names[2], "proteins ranked by iBAQ Intensity"),
          y = bquote("iBAQ Intensity for " ~ .(grp.names[2]) * " " * (Log[10])))+
-    theme_minimal()
+    theme_minimal()+
+    theme(axis.line = element_line(colour = "black"),
+          text = element_text(size = text.sz))
+    
+   
   
   right.gr.pl <- ggplot(data = ranked.df,
                         aes(x = Right.rank, y = Right.group))+
     geom_point(size = 2, colour = "royalblue")+
-    labs(x = paste0(grp.names[1], "proteins ranked by iBAQ Intensity"),
+    labs(x = paste(grp.names[1], "proteins ranked by iBAQ Intensity"),
          y = bquote("iBAQ Intensity for " ~ .(grp.names[1]) * " " * (Log[10])))+
-    theme_minimal()
-
+    theme_minimal()+
+    theme(axis.line = element_line(colour = "black"),
+          text = element_text(size = text.sz))
+    
+    
   
   return(
     #plot with a tiny column in between to serve as a larger gap
@@ -379,7 +414,7 @@ scurve <- function(df) {
 
 
 
-####5. SHINY ----
+####6. SHINY ----
 require(shiny)
 require(shinyjs)
 require(colourpicker)
@@ -397,17 +432,12 @@ ProteomicsApp <- shinyApp(
                    
                    fluidRow(
                      column(width = 4,
-                            fileInput(inputId = "proteinfile", label = "Input Protein Groups file") ),
+                            fileInput(inputId = "proteinfile", label = "Protein groups file") ),
                      column(width = 4, 
-                            fileInput("curvesfile", label = "Input file for volcano curves") ),
+                            fileInput("curvesfile", label = "Volcano threshold lines file") ),
                      column(width = 4,
-                            fileInput("onedfile", label = "1D annotation data input") ),
-                     column(width = 6, 
-                            actionButton("gen.pca", label = "Generate PCA plot")),
-                     column(width = 6, 
-                            actionButton("gen.scurve", label = "Generate S-curve plot")),
-                     column(width = 12, br()),
-                     uiOutput("enter.range"),
+                            fileInput("onedfile", label = "1D annotation enrichment file") ),
+                     column(width = 12, uiOutput("enter.range")),
                      column(width = 12, selectInput("left.gr", 
                                                     label = "Column range for Left group",
                                                     choices = c(),
@@ -417,6 +447,10 @@ ProteomicsApp <- shinyApp(
                                                     choices = c(),
                                                     multiple = T) ),
                      column(width = 12, br()),
+                     column(width = 6, 
+                            actionButton("gen.pca", label = "Generate PCA plot")),
+                     column(width = 6, 
+                            actionButton("gen.scurve", label = "Generate S-curve plot")),
                      column(width = 12, br()),
                    ),
                    
@@ -440,20 +474,20 @@ ProteomicsApp <- shinyApp(
                          column(width = 12, actionButton("reset", label = "Reset Volcano Plot")),
                          column(width = 12, br()),
                          column(width = 6, colourpicker::colourInput("left.col",
-                                                                     label = "Left group colour",
+                                                                     label = "Left group's colour",
                                                                      value = "#00B1B2") ),
                          column(width = 6, colourpicker::colourInput("right.col",
-                                                                     label = "Right group colour",
+                                                                     label = "Right group's colour",
                                                                      value = "#FF6666") ),
                          column(width = 12, br()),
                          column(width = 6, numericInput("s.knot",
                                                         label = "s0 value",
-                                                        value = 1) ),
+                                                        value = 0.1) ),
                          column(width = 6, numericInput("fdr.val",
                                                         label = "FDR value",
                                                         value = 0.05) ),
                          column(width = 12, 
-                                helpText("Note: Changing the s0 and FDR values does not change the plot. The caption exists to indicate parameters used for creating the plot.") ),
+                                helpText("Note: Changing the s0 and FDR values does not change the plot. The caption only indicates the parameters used for creating the plot.") ),
                          column(width = 12, br()),
                          column(width = 6, radioButtons("fdr.lines",
                                                         label = "Display curves",
@@ -476,12 +510,17 @@ ProteomicsApp <- shinyApp(
                                                        label = "GO terms color palette",
                                                        choices = list("Viridis", "Plasma", "Inferno", "Rocket", "Lajolla", "Turku", "Hawaii", "Batlow", "Spectral", "Blue-Red", "Green-Orange", "RdYlBu", "Zissou 1", "Roma"),
                                                        selected = "Viridis") )
-                     )
-                   )           
+                     ),
+                     column(width = 6, radioButtons("ellipse", 
+                                                    label = "PCA with ellipse",
+                                                    choices = list("yes", "no"),
+                                                    selected = "yes",
+                                                    inline = T) )
+                   )
       ),
       
-    
-        
+      
+      
       mainPanel(
         textOutput("text"),
         uiOutput("df.preview"),
@@ -528,11 +567,14 @@ ProteomicsApp <- shinyApp(
         plotOutput("onedhm1.bio.proc"),
         downloadButton("dlhm1", "Download Heatmap 1"),
         br(),
+        br(),
         plotOutput("onedhm2.cell.comp"),
         downloadButton("dlhm2", "Download Heatmap 2"),
         br(),
+        br(),
         plotOutput("onedhm3.mol.func"),
         downloadButton("dlhm3", "Download Heatmap 3"),
+        br(),
         br(),
         plotOutput("onedhm4.keywords"),
         downloadButton("dlhm4", "Download Heatmap 4"),
@@ -558,7 +600,7 @@ ProteomicsApp <- shinyApp(
     
     #1D annotation file
     df.1d <- eventReactive(input$onedfile, {
-      df <- read.delim("../1d annot.txt", stringsAsFactors = F, header=T)
+      df <- read.delim(input$onedfile$datapath, stringsAsFactors = F, header=T)
       df <- df[-c(1),]
     })
     
@@ -572,7 +614,7 @@ ProteomicsApp <- shinyApp(
                         inputId = "right.gr",
                         choices = colnames(df.prot()))
       output$enter.range <- renderUI({
-        helpText("To calculate average protein intensities across groups, select columns for each group:")
+        helpText("Select columns for each group to calculate average protein intensities across groups")
       })
     })
     
@@ -670,7 +712,7 @@ ProteomicsApp <- shinyApp(
     
     ####PCA plot
     pca.pl <- reactive({req(input$gen.pca) 
-      pca_plot( df.prot2() )
+      pca_plot( df.prot2(), ellipse = input$ellipse )
     })
     output$pcaplot <- renderPlot({
       pca.pl()
@@ -732,7 +774,7 @@ ProteomicsApp <- shinyApp(
       }
     )
     output$dlhm2 <- downloadHandler( 
-      filename = "Cell_component",
+      filename = "Cell_component.png",
       content = function(file) {
         ggsave(file, plot = cell.comp(), width = 13, height = 8, dpi = 600, bg = 'white')
       }
