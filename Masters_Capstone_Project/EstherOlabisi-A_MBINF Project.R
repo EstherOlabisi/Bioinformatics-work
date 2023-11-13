@@ -81,22 +81,14 @@ onedheatmap <- function(oned.df, plot.title = "") {
   
   oned.df <- oned.df %>%
     mutate_at(c("Score"), as.numeric)
-  
-  #some annotations have the same name but belong to a different database
-  #add additional column combining those entries
-  oned.df$unique.annotation <- paste(oned.df$Name, " (", oned.df$Type , ")", sep="")
-  
-  #unique annotations and samples
-  annotations <- sort(unique(oned.df$unique.annotation))
-  annotations <- annotations[!grepl("^\\+", annotations)]
+  annotations <- oned.df$Name
   samples <- sort(unique(oned.df$Column))
   
   #generate 1D score matrix
   M.score <- matrix(ncol=length(samples), nrow=length(annotations))
-  
   for(i in 1:length(samples)){
     for(j in 1:length(annotations)){
-      score.value <- oned.df$Score[oned.df$Column==samples[i] & oned.df$unique.annotation==annotations[j]]
+      score.value <- oned.df$Score[oned.df$Column==samples[i] & oned.df$Name==annotations[j]]
       if(length(score.value)==0){score.value <- NA}
       M.score[j,i] <- score.value
     }
@@ -105,11 +97,8 @@ onedheatmap <- function(oned.df, plot.title = "") {
   m <- M.score
   rownames(m) <- annotations
   colnames(m) <- samples
-  
-  #Sequence of samples for columns of heat map
-  m <- m[,c(1:length(samples))]
+  #Assign zero to NA values.
   m[is.na(m)] <- 0
-  
   #collapse matrix for use in ggplot
   m <- melt(m)
   colnames(m) <- c("Annotations", "T-test differences", "value")
@@ -342,7 +331,7 @@ pca_plot <- function(df, ellipse = "yes") {
     theme(axis.line = element_line(colour = "black"),
           text = element_text(size = text.sz),
           panel.border = element_blank())
-    
+  
   
   pca_plain <- autoplot(pca, data = counts, size = point.sz, 
                         scale = scl, colour = "Group.names") + guides(colour=guide_legend("Sample Type"), fill = "none")+
@@ -350,7 +339,7 @@ pca_plot <- function(df, ellipse = "yes") {
     theme(axis.line = element_line(colour = "black"),
           text = element_text(size = text.sz),
           panel.border = element_blank())
-
+  
   
   if (ellipse == "yes") {
     pca_ellipse
@@ -359,7 +348,7 @@ pca_plot <- function(df, ellipse = "yes") {
     pca_plain
   }
 }
-  
+
 
 ####5. S-curve plot ----
 #The function accepts the same dataframe produced after step 1 but only produces S-curves for the group pair (e.g WT vs MT) in the volcano plot
@@ -384,8 +373,8 @@ scurve <- function(df) {
     theme_minimal()+
     theme(axis.line = element_line(colour = "black"),
           text = element_text(size = text.sz))
-    
-   
+  
+  
   
   right.gr.pl <- ggplot(data = ranked.df,
                         aes(x = Right.rank, y = Right.group))+
@@ -395,8 +384,8 @@ scurve <- function(df) {
     theme_minimal()+
     theme(axis.line = element_line(colour = "black"),
           text = element_text(size = text.sz))
-    
-    
+  
+  
   
   return(
     #plot with a tiny column in between to serve as a larger gap
@@ -630,7 +619,7 @@ ProteomicsApp <- shinyApp(
         df
       }    
     })
-
+    
     #Dataframe preview on UI
     observe({
       req(df.prot2())
@@ -654,8 +643,8 @@ ProteomicsApp <- shinyApp(
       cat("Selected proteins: ", rownames(brushed.pts()) ) 
     }) 
     
-
-        
+    
+    
     ####create volcano plot using UI input variables  
     vplot <- reactive({
       vplot <- volcano_plot(df = df.prot2(),
