@@ -1,0 +1,72 @@
+﻿Column	Type	Name	Size	Score	P value	Benj. Hoch. FDR	Mean	Median
+#!{Type}C	C	C	N	N	N	N	N	N
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.447032546266752	3.98892761670678E-08	1.12487758791131E-05	0.264055573076923	0.1944915
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.437167160654474	5.96607322816642E-08	8.41216325171466E-06	0.257831167924528	0.192012
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.434106845948095	7.37141409253552E-08	6.61215844100436E-05	0.256271901886792	0.192012
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	rRNA binding [GO:0019843]	39	0.482310938007141	2.57474894262754E-07	0.000115477490076845	0.274609638461538	0.196971
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.398050183076128	3.20198340811539E-07	0.000163621352154696	0.23066358245614	0.179452
+N: Student's T-test Difference MT_WT	Keywords	rRNA-binding	42	0.460367786937223	3.42225728499864E-07	3.21692184789872E-05	0.252953028571429	0.200201
+N: Student's T-test Difference MT_WT	Keywords	RNA-binding	83	0.300953815261044	3.76027235638629E-06	0.000265099201125233	0.150895429228916	0.137237
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.416909436352122	6.51795926823949E-06	0.000436703270972046	0.277546825	0.187443
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.422317653716835	8.40844012877052E-06	0.000281682744313813	0.282869421052632	0.187443
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	cytoplasm [GO:0005737]	332	0.156701397665253	1.04365135780737E-05	0.00023308213657698	0.0175615068674699	0.06340765
+N: Student's T-test Difference MT_WT	Keywords	Cytoplasm	314	0.133889743026576	0.000225800550841551	0.0127351510674635	0.00288562445859873	0.0558157
+N: Student's T-test Difference MT_WT	Keywords	Chaperone	28	0.356873484780462	0.00118947645203191	0.0559053932455	0.216301782142857	0.298913
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	plasma membrane [GO:0005886]	137	-0.158978299201119	0.00205160748259413	0.0343644253334516	-0.193304161021898	-0.116736
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.883960064	7.78E-30	3.98E-27	34.95715232	35.24639893
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.913732546	1.00E-29	2.82E-27	35.17427711	35.29710007
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.912623393	1.17E-29	1.05E-26	35.1691865	35.29710007
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.880733735	1.23E-29	6.29E-27	34.8968279	35.15579987
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.918206467	1.74E-29	2.46E-27	35.22305166	35.32620049
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.907914727	2.24E-29	2.01E-26	35.10029231	35.25
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.907057094	2.53E-29	7.14E-27	35.09606966	35.25
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.872608429	3.96E-29	2.02E-26	34.69963502	34.91009903
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.872484437	4.01E-29	2.05E-26	34.73818618	34.94430161
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.911870414	4.16E-29	5.86E-27	35.14511714	35.28339958
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.901799373	5.18E-29	1.46E-26	34.94671152	35.0306015
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.900645161	6.12E-29	1.73E-26	34.89884143	35.06790161
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.900206939	6.51E-29	5.84E-26	34.89665273	35.06790161
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.899346786	7.30E-29	6.55E-26	34.93615114	35.0306015
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.905861984	9.35E-29	1.32E-26	34.99224248	35.0673008
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.866547492	9.71E-29	4.96E-26	34.70502813	34.95709991
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.905123246	1.04E-28	1.47E-26	34.94589028	35.14100075
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.890799582	2.45E-28	6.91E-26	34.88295469	35.08670044
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.858478775	3.03E-28	1.55E-25	34.67004736	34.9762001
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.889004978	3.14E-28	2.81E-25	34.87506604	35.08670044
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.895132212	4.17E-28	5.88E-26	34.92852112	35.09720039
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.883781873	6.31E-28	1.78E-25	34.85694903	35.12200165
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.883757496	6.33E-28	5.68E-25	34.85682833	35.12200165
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.888178477	1.05E-27	1.48E-25	34.90093653	35.12395096
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.84903673	1.15E-27	5.86E-25	34.54368243	34.98339844
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.876647754	1.66E-27	4.68E-25	34.73466225	35.10720062
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.875967391	1.82E-27	1.63E-24	34.73169622	35.10720062
+N: Student's T-test Difference MT_WT	Gene Ontology (biological process)	translation [GO:0006412]	57	0.843100018	2.63E-27	1.35E-24	34.45038601	34.74240112
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.880049005	3.12E-27	4.40E-25	34.77419039	35.11095047
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	structural constituent of ribosome [GO:0003735]	53	0.864092739	8.99E-27	8.06E-24	34.61360572	34.9151001
+N: Student's T-test Difference MT_WT	Keywords	Ribonucleoprotein	53	0.863219673	1.01E-26	2.85E-24	34.61001321	34.9151001
+N: Student's T-test Difference MT_WT	Keywords	Ribosomal protein	52	0.866286251	1.93E-26	2.73E-24	34.64643464	34.93074989
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.875550518	2.90E-21	1.94E-19	34.85008473	35.17314911
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.894941104	3.83E-21	1.28E-19	35.0041524	35.23034859
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.870573084	4.81E-21	3.22E-19	34.7762949	35.13389969
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.887392114	8.12E-21	2.72E-19	34.91518668	35.15035057
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.861196417	1.25E-20	8.36E-19	34.57192993	34.73259926
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.860402042	1.35E-20	9.04E-19	34.61591015	34.85500145
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.881587334	1.43E-20	4.80E-19	34.77378168	34.96085167
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.879771313	1.72E-20	5.76E-19	34.71741837	34.82749939
+N: Student's T-test Difference MT_WT	Keywords	rRNA-binding	42	0.834414181	2.50E-20	2.35E-18	34.7925618	35.18050003
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.846414729	5.61E-20	3.76E-18	34.53268986	34.8621006
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.867198642	5.97E-20	2.00E-18	34.6862919	34.91114998
+N: Student's T-test Difference MT_WT	Keywords	rRNA-binding	41	0.828432686	1.24E-19	1.17E-17	34.56472685	34.86289978
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.837347854	1.37E-19	9.19E-18	34.51824007	34.94619942
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.858167492	1.42E-19	4.77E-18	34.66886847	34.96319962
+N: Student's T-test Difference MT_WT	Keywords	rRNA-binding	42	0.811611556	2.55E-19	2.40E-17	34.63230946	35.15035057
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.829501916	2.96E-19	1.99E-17	34.39936743	34.83139992
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.849053437	3.41E-19	1.14E-17	34.54353152	34.93334961
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	rRNA binding [GO:0019843]	39	0.831316903	6.81E-19	3.06E-16	34.78613325	35.06389999
+N: Student's T-test Difference MT_WT	Keywords	rRNA-binding	42	0.801643085	6.85E-19	6.44E-17	34.46941208	34.78725052
+N: Student's T-test Difference MT_WT	Keywords	rRNA-binding	42	0.79899942	8.93E-19	8.40E-17	34.40980943	34.76865005
+N: Student's T-test Difference MT_WT	Keywords	rRNA-binding	42	0.797801729	1.00E-18	9.44E-17	34.32037381	34.70395088
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribosome [GO:0005840]	40	0.814404079	1.29E-18	8.61E-17	34.25373516	34.65530014
+N: Student's T-test Difference MT_WT	Gene Ontology (cellular component)	ribonucleoprotein complex [GO:1990904]	38	0.830647593	1.94E-18	6.49E-17	34.3803738	34.70905113
+N: Student's T-test Difference MT_WT	Keywords	RNA-binding	83	0.568215567	2.65E-18	1.87E-16	33.05768314	33.9211998
+N: Student's T-test Difference MT_WT	Gene Ontology (molecular function)	rRNA binding [GO:0019843]	38	0.822546689	4.17E-18	1.87E-15	34.54687625	34.8621006

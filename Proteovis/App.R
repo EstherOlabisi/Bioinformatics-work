@@ -3,18 +3,19 @@
 #August 8, 2023
 
 #All packages used
-# my.packages <- c("ggplot2", "ggpubr", "gplots", "ggrepel", "tidyverse", "DT", "reshape2", "scales", "RColorBrewer", "colourpicker", "ggnewscale", "ggfortify", "ggrepel", "shiny", "shinyjs", "shinyWidgets", "eulerr", "webshot")
+my.packages <- c("ggplot2", "ggpubr", "gplots", "ggrepel", "tidyverse", "DT", "reshape2", "scales", "RColorBrewer", "colourpicker", "ggnewscale", "ggfortify", "ggrepel", "shiny", "shinyjs", "shinyWidgets", "eulerr", "webshot")
 #Check if packages are installed
-# installed.pkgs <- my.packages %in% rownames(installed.packages())
+installed.pkgs <- my.packages %in% rownames(installed.packages())
 #Install packages that aren't already installed
-# if(any(installed.pkgs == FALSE)) {
-  # install.packages(my.packages[!installed.pkgs])
-# }
+if(any(installed.pkgs == FALSE)) {
+  install.packages(my.packages[!installed.pkgs])
+}
 #Load all packages
-#invisible(lapply(my.packages, library, character.only = T))
+invisible(lapply(my.packages, library, character.only = T))
 
 #Option to run packages individually when running app on Shinyapps.io
-library(ggplot2); library(ggpubr); library(gplots); library(ggrepel); library(tidyverse); library(DT); library(reshape2); library(scales); library(RColorBrewer); library(colourpicker); library(ggnewscale); library(ggfortify); library(ggrepel); library(shiny); library(shinyjs); library(shinyWidgets); library(eulerr)
+#library(ggplot2); library(ggpubr); library(gplots); library(ggrepel); library(tidyverse); library(DT); library(reshape2); library(scales); library(RColorBrewer); library(colourpicker); library(ggnewscale); library(ggfortify); library(ggrepel); library(shiny); library(shinyjs); library(shinyWidgets); library(eulerr)
+
 
 
 ####1. PROCESS DATA MATRIX ----
@@ -123,9 +124,9 @@ onedheatmap <- function(oned.df, plot.title = "") {
             axis.text = element_text(colour = "black"),
             text = element_text(size = 14),
             legend.position = "right")+
-     coord_fixed(ratio = 0.5)+
-     scale_x_discrete(expand=c(0,0))+
-     scale_y_discrete(expand=c(0,0))+
+      coord_fixed(ratio = 0.5)+
+      scale_x_discrete(expand=c(0,0))+
+      scale_y_discrete(expand=c(0,0))+
       labs(title = plot.title, 
            y = "Annotations")
   )
@@ -424,10 +425,11 @@ groupnames_to_colnames <- function(venn.df) {
 }
 
 #This functions takes the dataframe from the above step and evaluates the presence/absence of proteins based on minimum valid values
-evaluate_valid_vals <- function(venn.df, group.cols, min.percent = 0.50) {
+evaluate_valid_vals <- function(venn.df, group.cols, min.percent = 75) {
+  min.percent = min.percent/100
   df_list <- lapply(group.cols, function(x) venn.df[x]) #split the main df into the different groups
   binary.res <- lapply(df_list, \(x) ifelse(
-    rowSums(!is.na(x))/ncol(x) > min.percent,
+    rowSums(!is.na(x))/ncol(x) >= min.percent,
     1, 0))  #binary results: If valid values > minimum percentage in each df/group, the protein is present and evaluates to 1. Else, it evaluates to 0 for absent proteins
   grp.labs <- lapply(df_list, \(x) colnames(x)[1]) #extract group labels from the first header of each df/group
   names(binary.res) <- paste0(unlist(grp.labs), "_count")  #add the extracted labels to the binary results 
@@ -448,7 +450,7 @@ evaluate_valid_vals <- function(venn.df, group.cols, min.percent = 0.50) {
 #A Shiny app's function has two sections as seen below: the UI and the Server
 
 
-  #Shiny UI ---- 
+#Shiny UI ---- 
 width.val = 10
 height.val = 10
 dpi.val = 500
@@ -628,13 +630,16 @@ ui <- shinyUI(
                               fluidRow(
                                 column(width = 12,
                                        fileInput("vennfile", label = "Venn Diagram Matrix")),
-                                column(width = 12, textInput("venngroups", 
-                                                             label = "Enter the column range for each group, separated by commas:",
-                                                             placeholder = "Example for two groups: 1:4, 5:8")),
+                                column(width = 8, textInput("venngroups", 
+                                                            label = "Enter the column range for each group, separated by commas:",
+                                                            placeholder = "Example for two groups: 1:4, 5:8")),
+                                column(width = 4, numericInput("min.valid.vals",
+                                                               label = "Minimum % of valid values",
+                                                               min = 0, max = 100, step = 25, value = 75)),
                                 column(width = 6, actionButton("eval.valid.vals", label = "Evaluate valid values")),
                                 column(width = 6, actionButton("gen.venn", label = "Generate Venn diagram")),
                                 column(width = 12, br()),
-                                column(width = 6, uiOutput("venn.colour.picker"))
+                                column(width = 12, uiOutput("venn.colour.picker"))
                               )
                  ),
                  mainPanel(
@@ -908,7 +913,7 @@ server <- function(input, output, session) {
       col.range <- as.numeric(unlist(strsplit(x, ":"))) #obtain start:end indexes
       seq(col.range[1], col.range[2])
     })
-    evaluate_valid_vals(df.venn(), group.cols = venncols)
+    evaluate_valid_vals(df.venn(), group.cols = venncols, min.percent = input$min.valid.vals)
   })
   #Update df.venn with merged df containing binary values
   observe({req(venn.input())
@@ -923,8 +928,9 @@ server <- function(input, output, session) {
   observe({req(venn.names())
     output$venn.colour.picker <- renderUI({
       lapply(venn.names(), function(x)
-        colourpicker::colourInput(inputId = x, 
-                                  label = paste0(x), value = "#F7B2D2")
+        column(width = 4, colourpicker::colourInput(inputId = x, 
+                                                    label = paste0(x), value = "#F7B2D2")
+        )
       )
     })
   })

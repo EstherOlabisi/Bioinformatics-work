@@ -1,0 +1,13 @@
+name: proteovis
+title:
+username: proteovis
+account: proteovis
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10719842
+bundleId: 8176271
+url: https://proteovis.shinyapps.io/proteovis/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|App

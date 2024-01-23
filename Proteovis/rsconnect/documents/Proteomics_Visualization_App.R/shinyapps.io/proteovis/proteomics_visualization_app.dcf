@@ -1,0 +1,10 @@
+name: proteomics_visualization_app
+title:
+username: proteovis
+account: proteovis
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10719193
+bundleId: 8008675
+url: https://proteovis.shinyapps.io/proteomics_visualization_app/
+version: 1
